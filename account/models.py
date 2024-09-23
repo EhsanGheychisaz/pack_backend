@@ -3,10 +3,10 @@ from django.contrib.auth.hashers import make_password
 
 
 class User(models.Model):
-    name= models.CharField(max_length=128)
+    name = models.CharField(max_length=128)
     is_deleted = models.BooleanField(default=False)
-    phone = models.CharField(max_length=18 , unique=True)
-    email = models.EmailField()
+    phone = models.CharField(max_length=18 , unique=True , null=True)
+    email = models.EmailField(null=True)
     created_date = models.DateField(auto_now_add=True)
     def __str__(self):
         return self.name

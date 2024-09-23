@@ -39,10 +39,17 @@ class UserInfoViewSet(viewsets.ViewSet):
             secret_key = pyotp.random_base32()
             secret_key_user = SecretKeyUser(user=user, key=secret_key)
             secret_key_user.save()
-
+        completeness_score = sum(
+            bool(field) for field in [user.email, user.phone, user.name]
+        )
+        completeness_percentage = (completeness_score / 3) * 100
+        username = user.name if user.name else None
         user_info = {
             "id": user.id,
-            "username": user.name,
+            'phone': user.phone,
+            'email':user.email,
+            "completeness":completeness_percentage,
+            "username": username,
             "secret_key": secret_key_user.key  # Include the secret key in the response
         }
         return Response(user_info, status=status.HTTP_200_OK)
@@ -66,12 +73,12 @@ def validate(data):
     totp_code = data.get('totp_code')
 
     # Ensure totp_code is long enough to contain code and user_id
-    if len(totp_code) <= 4:
+    if len(totp_code) <= 6:
         return False
 
     # Extract the 4-digit TOTP code and the remaining user_id
-    code = totp_code[:4]  # First 4 characters are the TOTP code
-    user_id = totp_code[4:]  # Remaining characters are the user ID
+    code = totp_code[:6]  # First 4 characters are the TOTP code
+    user_id = totp_code[6:]  # Remaining characters are the user ID
 
     # Fetch the user using the user_id
     user = get_object_or_404(User, id=user_id)
@@ -81,7 +88,7 @@ def validate(data):
     secret_key = secret_key_user.key  # Extract the secret key
 
     # Generate the TOTP object with the retrieved secret_key and 120-second interval
-    totp = pyotp.TOTP(secret_key, interval=120)
+    totp = pyotp.TOTP(secret_key, interval=300 , digits=6)
 
     # Verify the TOTP code with a valid window of 1
     if totp.verify(code, valid_window=1):
@@ -158,7 +165,7 @@ class SendOTPView(APIView):
         try:
             user = User.objects.get(phone=phone, is_deleted=False)
         except User.DoesNotExist:
-            user = User.objects.create(phone=phone, name=f"User {phone}", email=f"{phone}@example.com")
+            user = User.objects.create(phone=phone)
 
         # Generate and send the confirmation code
         if generateConfirmCode(user):
