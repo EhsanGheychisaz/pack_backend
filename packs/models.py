@@ -1,9 +1,11 @@
 from django.db import models
 from account.models import *
+from shop.models import *
 
 class UserPackInfo(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
     count=models.PositiveIntegerField()
+    shop = models.ManyToManyField(Shop , null=True)
 
 class UserPacks(models.Model):
     user_pack_id = models.ForeignKey(UserPackInfo , on_delete=models.PROTECT)

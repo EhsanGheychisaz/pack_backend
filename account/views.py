@@ -195,6 +195,21 @@ class UpdateUserView(APIView):
         serializer = UpdateUserSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid():
-            serializer.save()  # Save the updated fields
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer.save()
+            # Include completeness in the response
+            completeness = self.calculate_completeness(user)
+            return Response({
+                **serializer.data,
+                "completeness": completeness
+            }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def calculate_completeness(self, user):
+        """Calculate completeness based on filled fields."""
+        fields_to_check = ['name', 'email', 'phone']  # Add other fields if necessary
+        filled_fields = sum(1 for field in fields_to_check if getattr(user, field))
+
+        # Calculate the percentage of filled fields
+        total_fields = len(fields_to_check)
+        completeness_percentage = (filled_fields / total_fields) * 100 if total_fields else 0
+        return round(completeness_percentage, 2)  # Round to two decimal places

@@ -28,7 +28,8 @@ class UserPackInfoView(APIView):
         response_data = {
             'user_pack_info': user_pack_info_serializer.data,
             'user_packs': user_packs_serializer.data,
-            'remind': remind
+            'remind': remind,
+            "total":remind +user_pack_info.count
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
