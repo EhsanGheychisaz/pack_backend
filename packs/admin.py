@@ -11,7 +11,7 @@ class UserPackInfoAdmin(admin.ModelAdmin):
     search_fields = ('user__name', 'user__email')
 
 class UserPacksAdmin(admin.ModelAdmin):
-    list_display = ('user_pack_id', 'pack_title', 'given_date', 'due_date')
+    list_display = ('user_pack_id', 'given_date', 'due_date')
     list_filter = ('given_date', 'due_date')
     search_fields = ('pack_title', 'pack_description')
 
