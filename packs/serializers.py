@@ -13,9 +13,10 @@ class UserPacksSerializer(serializers.ModelSerializer):
         fields = ['pack_title', 'pack_description', 'given_date', 'due_date']
 
 class UserPackInfoSerializer(serializers.ModelSerializer):
-    shop = ShopSerializer(source='shop', many=True, read_only=True)
+    shop = ShopSerializer(many=True, read_only=True)
     user_packs = UserPacksSerializer(many=True, read_only=True)
     user_name = serializers.CharField(source='user.username', read_only=True)
+
     class Meta:
         model = UserPackInfo
-        fields = ['shop','user_packs']
+        fields = ['shop', 'user_packs', 'user_name']

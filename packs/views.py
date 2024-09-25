@@ -5,11 +5,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import UserPackInfo, UserPacks
 from .serializers import UserPackInfoSerializer, UserPacksSerializer
+from account.permissions import CustomIsAuthenticated
 
 
 # Create your views here.
 class UserPackInfoView(APIView):
+    permission_classes = [CustomIsAuthenticated]
     def get(self, request, user_id):
+        if user_id != request.user_id:
+            return  Response(status=403)
         # Fetch the UserPackInfo for the user
         user_pack_info = get_object_or_404(UserPackInfo, user_id=user_id)
 
