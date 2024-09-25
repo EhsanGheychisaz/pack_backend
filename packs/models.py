@@ -11,5 +11,6 @@ class UserPacks(models.Model):
     pack_description = models.TextField()
     given_date = models.DateField()
     due_date = models.DateField()
+    containers = models.PositiveIntegerField(default=0)
     shop = models.ForeignKey(Shop , on_delete=models.PROTECT , null=True)
 
