@@ -213,3 +213,16 @@ class UpdateUserView(APIView):
         total_fields = len(fields_to_check)
         completeness_percentage = (filled_fields / total_fields) * 100 if total_fields else 0
         return round(completeness_percentage, 2)  # Round to two decimal places
+
+
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from .models import User
+from .serializers import UserSerializer  # Ensure you have a UserSerializer
+
+class UserListViewSet(APIView):
+
+    def get(self, request):
+        users = User.objects.filter(is_deleted=False)  # Fetch active users
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
