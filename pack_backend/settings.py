@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'account',
     'packs',
+    'corsheaders',
     'shop',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -49,6 +50,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -79,34 +82,34 @@ WSGI_APPLICATION = 'pack_backend.wsgi.application'
 #     'DEFAULT_AUTHENTICATION_CLASSES': (
 #         'rest_framework_simplejwt.authentication.JWTAuthentication',
 #     ),
-# }
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+DATABASE_USER = os.getenv("DATABASE_USER")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASS")
+# # Database
+# # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 #
-# DATABASE_NAME = os.getenv("DATABASE_NAME")
-# DATABASE_USER = os.getenv("DATABASE_USER")
-# DATABASE_PASSWORD = os.getenv("DATABASE_PASS")
-# DATABASE_HOST = os.getenv("DATABASE_URL")
-# DATABASE_PORT = os.getenv("DATABASE_PORT")
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': f'{DATABASE_NAME}',
-#         'USER': f'{DATABASE_USER}',
-#         'PASSWORD': f'{DATABASE_PASSWORD}',
-#         'HOST': f'{DATABASE_HOST}',
-#         'PORT': '5432',
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
 #
+
+DATABASE_HOST = os.getenv("DATABASE_URL")
+DATABASE_PORT = os.getenv("DATABASE_PORT")
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': f'{DATABASE_NAME}',
+        'USER': f'{DATABASE_USER}',
+        'PASSWORD': f'{DATABASE_PASSWORD}',
+        'HOST': f'{DATABASE_HOST}',
+        'PORT': '5432',
+    }
+}
+
 
 
 # Password validation
