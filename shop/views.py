@@ -94,8 +94,10 @@ class ShopAuthView(APIView):
     def login(self, request):
         email = request.data["email"]
         password = request.data["password"]
+        print(UserAdmin.objects.filter(email=email).get().password)
         try:
             user = UserAdmin.objects.filter(email=email,password=password).get()
+            print(user)
             refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
