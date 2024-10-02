@@ -113,10 +113,10 @@ class ShopAuthView(APIView):
             try:
                 shop = Shop.objects.get(email=email, status='active')
             except Shop.DoesNotExist:
-                return Response({"error": "Shop does not exist or is inactive"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "Shop does not exist or is inactive","problem":"email"}, status=status.HTTP_404_NOT_FOUND)
 
             if not shop.password or not password == shop.password:
-                return Response({"error": "Invalid password or password not set"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid password or password not set","problem":"password"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(shop)
@@ -173,12 +173,12 @@ class ShopAuthView(APIView):
                 try:
                     user = UserAdmin.objects.get(email=email)
                 except UserAdmin.DoesNotExist:
-                    return Response({"error": "No active shop or admin with this email"},
+                    return Response({"error": "No active shop or admin with this email" ,"problem":"email"},
                                     status=status.HTTP_404_NOT_FOUND)
 
             # Check if reset code matches
             if user.reset_code != reset_code:
-                return Response({"error": "Invalid reset code"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid reset code","problem":"reset code"}, status=status.HTTP_400_BAD_REQUEST)
 
             # Set the new password
             user.password =  new_password
