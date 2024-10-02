@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ShopViewSet , ShopLoginView
+from .views import ShopViewSet ,ShopAuthView
 
 router = DefaultRouter()
 router.register(r'shop', ShopViewSet, basename='shop')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('login/', ShopLoginView.as_view(), name='shop-login'),
+    path('login/', ShopAuthView.as_view(), name='shop-login'),
+    path('register/', ShopAuthView.as_view(), name='shop-login'),
 ]

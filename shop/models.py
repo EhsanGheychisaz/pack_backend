@@ -15,8 +15,8 @@ class Shop(models.Model):
     password = models.CharField(max_length=128)  # Store hashed password
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='inactive')
     logo = models.ImageField(upload_to='shop_logos/')
-    x_gis = models.FloatField()
-    y_gis = models.FloatField()
+    x_gis = models.FloatField(null=True)
+    y_gis = models.FloatField(null=True)
 
     def __str__(self):
         return self.name

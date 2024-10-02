@@ -12,6 +12,16 @@ class User(models.Model):
         return self.name
 
 
+class UserAdmin(models.Model):
+    name = models.CharField(max_length=128)
+    email = models.EmailField()
+    password = models.CharField(max_length=256)
+
+    def __str__(self):
+        return self.name
+
+
+
 class SecretKeyUser(models.Model):
     user = models.OneToOneField(User , on_delete=models.CASCADE)
     key = models.CharField(max_length=528)

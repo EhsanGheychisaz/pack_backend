@@ -220,9 +220,14 @@ from rest_framework.response import Response
 from .models import User
 from .serializers import UserSerializer  # Ensure you have a UserSerializer
 
+
 class UserListViewSet(APIView):
+    permission_classes = [CustomIsAuthenticated]
 
     def get(self, request):
-        users = User.objects.filter(is_deleted=False)  # Fetch active users
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        user_id = request.user_id
+        if User.objects.filter(pk=user_id , role="admin").exists():
+            users = User.objects.filter(is_deleted=False)
+            serializer = UserSerializer(users, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response( status=status.HTTP_403_FORBIDDEN)
