@@ -8,6 +8,10 @@ from .models import Shop
 from account.models import User , UserAdmin
 from .serializers import ShopSerializer
 from account.permissions import CustomIsAuthenticated
+import random
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
+from django.conf import settings
 
 
 class ShopViewSet(viewsets.ModelViewSet):
@@ -75,6 +79,10 @@ class ShopAuthView(APIView):
             return self.login(request)
         elif 'register' in request.path:
             return self.register(request)
+        elif 'forget-password' in request.path:
+            return self.forget_password(request)
+        elif 'reset-password' in request.path:
+            return self.reset_password(request)
         return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
     def register(self, request):
@@ -118,3 +126,65 @@ class ShopAuthView(APIView):
                 'access': str(refresh.access_token),
                 'status': "shop"
             }, status=status.HTTP_200_OK)
+
+    def forget_password(self, request):
+
+            email = request.data.get("email")
+            if not email:
+                return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                # Check if shop or admin exists with this email
+                user = Shop.objects.get(email=email, status='active')
+            except Shop.DoesNotExist:
+                try:
+                    user = UserAdmin.objects.get(email=email)
+                except UserAdmin.DoesNotExist:
+                    return Response({"error": "No active shop or admin with this email"},
+                                    status=status.HTTP_404_NOT_FOUND)
+
+            # Generate a random code and save it to the user (temporary storage)
+            reset_code = get_random_string(6, allowed_chars='0123456789')  # 6-digit reset code
+            user.reset_code = reset_code
+            user.save()
+
+            # Send email
+            send_mail(
+                subject="Password Reset Code",
+                message=f"Your password reset code is: {reset_code}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+            )
+
+            return Response({"message": "Password reset code sent to your email."}, status=status.HTTP_200_OK)
+
+    def reset_password(self, request):
+
+            email = request.data.get("email")
+            reset_code = request.data.get("reset_code")
+            new_password = request.data.get("new_password")
+
+            if not email or not reset_code or not new_password:
+                return Response({"error": "Email, reset code, and new password are required"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                # Check if shop or admin exists with this email
+                user = Shop.objects.get(email=email, status='active')
+            except Shop.DoesNotExist:
+                try:
+                    user = UserAdmin.objects.get(email=email)
+                except UserAdmin.DoesNotExist:
+                    return Response({"error": "No active shop or admin with this email"},
+                                    status=status.HTTP_404_NOT_FOUND)
+
+            # Check if reset code matches
+            if user.reset_code != reset_code:
+                return Response({"error": "Invalid reset code"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Set the new password
+            user.password =  new_password
+            user.reset_code = None  # Clear the reset code after successful reset
+            user.save()
+
+            return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)

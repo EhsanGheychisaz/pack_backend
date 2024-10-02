@@ -9,4 +9,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('login/', ShopAuthView.as_view(), name='shop-login'),
     path('register/', ShopAuthView.as_view(), name='shop-login'),
+    path('forget-password/', ShopAuthView.as_view(), name='shop-login'),
+    path('reset-password/', ShopAuthView.as_view(), name='shop-login'),
 ]

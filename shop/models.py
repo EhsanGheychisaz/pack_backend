@@ -17,6 +17,7 @@ class Shop(models.Model):
     logo = models.ImageField(upload_to='shop_logos/')
     x_gis = models.FloatField(null=True)
     y_gis = models.FloatField(null=True)
+    reset_code = models.CharField(max_length=6, null=True, blank=True)
 
     def __str__(self):
         return self.name
