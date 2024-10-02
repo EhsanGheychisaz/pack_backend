@@ -102,10 +102,8 @@ class ShopAuthView(APIView):
     def login(self, request):
         email = request.data["email"]
         password = request.data["password"]
-        print(UserAdmin.objects.filter(email=email).get().password)
         try:
             user = UserAdmin.objects.filter(email=email,password=password).get()
-            print(user)
             refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
@@ -188,3 +186,86 @@ class ShopAuthView(APIView):
             user.save()
 
             return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
+
+
+from django.core.mail import send_mail
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth.hashers import make_password
+
+
+class UserManagementView(APIView):
+    permission_classes = [CustomIsAuthenticated]
+
+    def post(self, request):
+        if 'change-password' in request.path:
+            return self.change_password(request)
+        elif 'change-shop-status' in request.path:
+            return self.change_shop_status(request)
+        return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def change_password(self, request):
+        shop_id = request.data.get("shop")
+        new_password = request.data.get("new_password")
+
+        if not shop_id or not new_password:
+            return Response({"error": "Shop ID and new password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            shop = Shop.objects.get(id=shop_id, status='active')
+        except Shop.DoesNotExist:
+            return Response({"error": "Shop not found or inactive"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Hash the new password and update the shop
+        shop.password = make_password(new_password)
+        shop.save()
+
+        # Send email notification
+        send_mail(
+            subject="Your Password Has Been Changed",
+            message="Your password has been successfully changed.",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[shop.email],
+        )
+
+        return Response({"message": "Password changed successfully and email notification sent."}, status=status.HTTP_200_OK)
+
+    def change_shop_status(self, request):
+
+        shop_id = request.data.get("shop")
+        new_status = request.data.get("new_status")
+
+        if not shop_id or not new_status:
+            return Response({"error": "Shop ID and new status are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Only allow valid status
+        if new_status not in ['active', 'inactive']:
+            return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if the request user is an admin
+        # user_email = request.data.get("email")
+        # try:
+        #     admin = UserAdmin.objects.get(email=user_email)
+        # except UserAdmin.DoesNotExist:
+        #     return Response({"error": "Admin not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the shop's status
+        try:
+            shop = Shop.objects.get(id=shop_id)
+            shop.status = new_status
+            shop.save()
+
+            # Send email notification
+            send_mail(
+                subject="Shop Status Changed",
+                message=f"The status of your shop has been changed to {new_status}.",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[shop.email],
+            )
+
+            return Response({"message": "Shop status changed successfully and email notification sent."}, status=status.HTTP_200_OK)
+
+        except Shop.DoesNotExist:
+            return Response({"error": "Shop not found"}, status=status.HTTP_404_NOT_FOUND)

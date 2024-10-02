@@ -217,7 +217,7 @@ class UpdateUserView(APIView):
 
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from .models import User
+from .models import User,UserAdmin
 from .serializers import UserSerializer  # Ensure you have a UserSerializer
 
 
@@ -226,7 +226,7 @@ class UserListViewSet(APIView):
 
     def get(self, request):
         user_id = request.user_id
-        if User.objects.filter(pk=user_id , role="admin").exists():
+        if UserAdmin.objects.filter(pk=user_id ).exists():
             users = User.objects.filter(is_deleted=False)
             serializer = UserSerializer(users, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
