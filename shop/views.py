@@ -99,6 +99,7 @@ class ShopAuthView(APIView):
             refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
+                'status':"admin"
             }, status=status.HTTP_200_OK)
         except:
             try:
@@ -113,4 +114,5 @@ class ShopAuthView(APIView):
             refresh = RefreshToken.for_user(shop)
             return Response({
                 'access': str(refresh.access_token),
+                'status': "shop"
             }, status=status.HTTP_200_OK)
