@@ -26,8 +26,9 @@ class UserInfoViewSet(viewsets.ViewSet):
 
     def list(self, request):
         user_id = request.user_id
+        user_id = TokenModels.objects.get(pk=user_id)
         try:
-            user = User.objects.get(id=user_id)
+            user = User.objects.get(id=user_id.model_id)
         except User.DoesNotExist:
             return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -55,21 +56,13 @@ class UserInfoViewSet(viewsets.ViewSet):
         return Response(user_info, status=status.HTTP_200_OK)
 
 
-from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from .serializers import TOTPVerificationSerializer
-
-
-from django.shortcuts import get_object_or_404
-import pyotp
-from .models import User
-
 from django.shortcuts import get_object_or_404
 import pyotp
 from .models import User, SecretKeyUser
 
 def validate(data):
+    print(data)
     totp_code = data.get('totp_code')
 
     # Ensure totp_code is long enough to contain code and user_id
@@ -112,7 +105,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, SMSComfirmCode
+from .models import User, SMSComfirmCode,TokenModels
 from .serializers import LoginSerializer
 
 class LoginView(APIView):
@@ -142,20 +135,21 @@ class LoginView(APIView):
             except SMSComfirmCode.DoesNotExist:
                 return Response({"error": "Confirmation code not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            refresh = RefreshToken.for_user(user)
+            token = TokenModels.objects.create(model_name='user' , model_id=user.id)
+            refresh = RefreshToken.for_user(token)
             return Response({
                 'access': str(refresh.access_token),
             }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import User
 from .sms import generateConfirmCode
 
+
 class SendOTPView(APIView):
+
     def post(self, request):
         phone = request.data.get('phone')
         if not phone:
@@ -175,19 +169,18 @@ class SendOTPView(APIView):
 
 
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import User
 from .serializers import UpdateUserSerializer
+
 
 class UpdateUserView(APIView):
     permission_classes = [CustomIsAuthenticated]
 
     def put(self, request):
         user_id = request.user_id
+        user_id = TokenModels.objects.get(pk=user_id)
         try:
             # Fetch the user by their ID
-            user = User.objects.get(id=user_id, is_deleted=False)
+            user = User.objects.get(id=user_id.model_id, is_deleted=False)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 

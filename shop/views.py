@@ -12,6 +12,7 @@ import random
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.conf import settings
+from account.models import TokenModels
 
 
 class ShopViewSet(viewsets.ModelViewSet):
@@ -19,54 +20,20 @@ class ShopViewSet(viewsets.ModelViewSet):
     queryset = Shop.objects.all()
     serializer_class = ShopSerializer
 
+    def list(self, request, *args, **kwargs):
+        user_id = request.user_id
+        user_id = TokenModels.objects.get(pk=user_id)
+        try:
+            user = User.objects.get(id=user_id.model_id)
+            return super().list(request, *args, **kwargs)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
-    #
-    # @action(detail=False, methods=['post'], url_path='login')
-    # def login(self, request):
-    #     email = request.data.get('email')
-    #     password = request.data.get('password')
-    #
-    #     try:
-    #         shop = Shop.objects.get(email=email)
-    #     except Shop.DoesNotExist:
-    #         return Response({'detail': 'Shop not found'}, status=status.HTTP_404_NOT_FOUND)
-    #
-    #     if shop.status != 'active':
-    #         return Response({'detail': 'Shop is not active'}, status=status.HTTP_403_FORBIDDEN)
-    #
-    #     if not check_password(password, shop.password):
-    #         return Response({'detail': 'Invalid password'}, status=status.HTTP_401_UNAUTHORIZED)
-    #
-    #     return Response({
-    #         'id': shop.id,
-    #         'name': shop.name,
-    #         'email': shop.email,
-    #         'phone': shop.phone,
-    #         'logo': shop.logo.url if shop.logo else None,
-    #     }, status=status.HTTP_200_OK)
 
 
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth.hashers import check_password
-from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import ShopSerializer
-from .models import Shop
-
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from .models import Shop
-from .serializers import ShopSerializer
-from rest_framework.permissions import IsAuthenticated
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Shop
 from .serializers import ShopSerializer
