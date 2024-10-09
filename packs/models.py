@@ -21,7 +21,7 @@ class Container(models.Model):
         ('OM', '44'),
     ]
     type = models.CharField(max_length=4,choices=CONTAINER_TYPE_CHOICES)
-    code = models.CharField(max_length=8)
+    code = models.CharField(max_length=12)
     guarantee_amount = models.IntegerField(default=15)
     country = models.CharField(max_length=3, choices=COUNTRY_TYPE_CHOICES , null=True)
     date = models.DateField(auto_now=True)
