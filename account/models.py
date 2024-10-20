@@ -33,6 +33,6 @@ class SMSComfirmCode(models.Model):
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
 
 
-class TokenModels(models.Model):
+class TokenModel(models.Model):
     model_id = models.PositiveIntegerField()
     model_name = models.CharField(max_length=256)

@@ -12,7 +12,7 @@ import random
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.conf import settings
-from account.models import TokenModels
+from account.models import TokenModel
 
 
 class ShopViewSet(viewsets.ModelViewSet):
@@ -22,7 +22,7 @@ class ShopViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         user_id = request.user_id
-        user_id = TokenModels.objects.get(pk=user_id)
+        user_id = TokenModel.objects.get(pk=user_id)
         try:
             user = User.objects.get(id=user_id.model_id)
             return super().list(request, *args, **kwargs)

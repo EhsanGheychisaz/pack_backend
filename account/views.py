@@ -26,7 +26,7 @@ class UserInfoViewSet(viewsets.ViewSet):
 
     def list(self, request):
         user_id = request.user_id
-        user_id = TokenModels.objects.get(pk=user_id)
+        user_id = TokenModel.objects.get(pk=user_id)
         try:
             user = User.objects.get(id=user_id.model_id)
         except User.DoesNotExist:
@@ -105,7 +105,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, SMSComfirmCode,TokenModels
+from .models import User, SMSComfirmCode,TokenModel
 from .serializers import LoginSerializer
 
 class LoginView(APIView):
@@ -177,7 +177,7 @@ class UpdateUserView(APIView):
 
     def put(self, request):
         user_id = request.user_id
-        user_id = TokenModels.objects.get(pk=user_id)
+        user_id = TokenModel.objects.get(pk=user_id)
         try:
             # Fetch the user by their ID
             user = User.objects.get(id=user_id.model_id, is_deleted=False)
