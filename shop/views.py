@@ -22,11 +22,11 @@ class ShopViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         user_id = request.user_id
-        user_id = TokenModel.objects.get(pk=user_id)
         try:
-            user = User.objects.get(id=user_id.model_id)
+            # user_id = TokenModel.objects.get(pk=user_id)
+            # user = User.objects.get(id=user_id.model_id)
             return super().list(request, *args, **kwargs)
-        except User.DoesNotExist:
+        except:
             return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request, *args, **kwargs):
