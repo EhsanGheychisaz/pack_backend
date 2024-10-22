@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserPackInfo, UserPacks, Container
+from .models import UserPackInfo, UserPacks, Container,ContainerRequest
 from shop.models import Shop
 import random
 from datetime import datetime
@@ -35,3 +35,22 @@ class ContainerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Container
         fields = ['type', 'code', 'guarantee_amount', 'country', 'date', 'shop']
+
+
+class ContainerRequestSerializer(serializers.ModelSerializer):
+    container = ContainerSerializer(read_only=True)
+
+    class Meta:
+        model = ContainerRequest
+        fields = ['id','container', 'shop', 'count', 'requested_by', 'request_date','container_type', 'status', 'approval_date', 'denial_reason']
+
+    # Creating a new container request
+    def create(self, validated_data):
+        print(validated_data)
+        request = ContainerRequest.objects.create(**validated_data)
+        return request
+
+
+class ContainerApprovalSerializer(serializers.Serializer):
+    approved = serializers.BooleanField()
+    reason = serializers.CharField(required=False)

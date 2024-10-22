@@ -37,3 +37,13 @@ class ContainerAdmin(admin.ModelAdmin):
 admin.site.register(Container, ContainerAdmin)
 admin.site.register(UserPackInfo, UserPackInfoAdmin)
 admin.site.register(UserPacks, UserPacksAdmin)
+
+from django.contrib import admin
+from .models import ContainerRequest
+
+class ContainerRequestAdmin(admin.ModelAdmin):
+    list_display = ('container_type', 'shop', 'requested_by', 'status', 'count', 'request_date', 'approval_date')
+    list_filter = ('status', 'container_type', 'shop')
+    search_fields = ('shop__name', 'requested_by__username', 'container_type')
+
+admin.site.register(ContainerRequest, ContainerRequestAdmin)

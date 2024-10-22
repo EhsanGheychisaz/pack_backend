@@ -3,8 +3,9 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from shop.models import Shop
 from .models import UserPackInfo, UserPacks , Container
-from .serializers import UserPackInfoSerializer, UserPacksSerializer , ContainerSerializer
+from .serializers import UserPackInfoSerializer, UserPacksSerializer , ContainerSerializer, ContainerRequestSerializer,ContainerApprovalSerializer
 from account.permissions import CustomIsAuthenticated
 from account.views import validate
 from account.models import User
@@ -57,6 +58,79 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     queryset = Container.objects.all()
     serializer_class = ContainerSerializer
 
+    @action(detail=False, methods=['post'])
+    def request_container(self, request):
+        container_requests = request.data.get('containers', [])
+        shop_id = request.data.get('shop_id')
+        requested_by = request.user.id
+
+        if not container_requests:
+            return Response({'error': 'No container requests provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        for container_request in container_requests:
+            container_type = container_request.get('container_type')
+            count = container_request.get('count', 1)
+
+            if ContainerRequest.objects.filter(
+                    shop_id=shop_id,
+                    container_type=container_type,
+                    status='PENDING'
+            ).exists():
+                return Response({'error': f'A pending request already exists for container type {container_type}.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            request_data = {
+                'container_type': container_type,
+                'shop': shop_id,
+                'requested_by': requested_by,
+                'count': count,
+            }
+            serializer = ContainerRequestSerializer(data=request_data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'status': 'Requests for containers successfully created'}, status=status.HTTP_201_CREATED)
+
+
+    @action(detail=True, methods=['post'])
+    def approve_or_deny(self, request, pk=None):
+        container_request = get_object_or_404(ContainerRequest, pk=pk)
+        serializer = ContainerApprovalSerializer(data=request.data)
+
+        if serializer.is_valid():
+            approved = serializer.validated_data.get('approved')
+            reason = serializer.validated_data.get('reason', '')
+
+            if approved:
+                # Fetch available containers of the type requested
+                available_containers = Container.objects.filter(
+                    type=container_request.container_type, shop__isnull=True
+                )[:container_request.count]
+
+                if available_containers.count() < container_request.count:
+                    return Response(
+                        {'error': f'Not enough available containers for type {container_request.container_type}'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+                # Assign containers to the shop
+                for container in available_containers:
+                    container.shop = container_request.shop
+                    container.save()
+
+                container_request.status = 'APPROVED'
+                container_request.approval_date = timezone.now()
+                container_request.save()
+
+                return Response({'status': 'Container request approved and containers assigned'}, status=status.HTTP_200_OK)
+            else:
+                container_request.status = 'DENIED'
+                container_request.denial_reason = reason
+                container_request.save()
+                return Response({'status': 'Container request denied', 'reason': reason}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def create(self, request, *args, **kwargs):
         # Extracting the data from the request
         country = request.data.get('country')
@@ -234,3 +308,23 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+from .models import ContainerRequest
+
+from rest_framework.decorators import action
+from rest_framework import status, viewsets
+from rest_framework.response import Response
+from .models import Container, ContainerRequest, Shop
+from .serializers import ContainerSerializer, ContainerRequestSerializer
+
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+
+class ContainerRequestViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ContainerRequest.objects.all()
+    serializer_class = ContainerRequestSerializer
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filterset_fields = ['status', 'shop']
+    search_fields = ['shop__name', 'requested_by__username']
