@@ -95,12 +95,14 @@ class ShopAuthView(APIView):
     def forget_password(self, request):
 
             email = request.data.get("email")
+            print(email)
             if not email:
                 return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
                 # Check if shop or admin exists with this email
-                user = Shop.objects.get(email=email, status='active')
+                user = Shop.objects.filter(email__exact=email, status='active').get()
+
             except Shop.DoesNotExist:
                 try:
                     user = UserAdmin.objects.get(email=email)
