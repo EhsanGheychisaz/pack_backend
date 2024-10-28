@@ -57,6 +57,7 @@ import random
 class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.CreateModelMixin):
     queryset = Container.objects.all()
     serializer_class = ContainerSerializer
+    permission_classes = [CustomIsAuthenticated]
 
     @action(detail=False, methods=['post'])
     def request_container(self, request):
@@ -279,17 +280,17 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     def loans_by_weekday(self, request):
         today = timezone.now()  # Keep it as datetime
         start_of_week = today - timezone.timedelta(days=today.weekday())
-
+        _id = request.user_id
         # Get all UserPacks with related containers
-        user_packs = UserPacks.objects.prefetch_related('containers')
-
+        user_packs = UserPacks.objects.prefetch_related('containers').filter(containers__shop_id=_id)
+        shop_pack = Container.objects.filter(shop_id=_id)
         # Create a dictionary to hold counts for each day of the week
         loans_by_day = defaultdict(int)
-
+        print(loans_by_day)
         for user_pack in user_packs:
             # Ensure that given_date is a datetime object
             loan_date = timezone.make_aware(datetime.combine(user_pack.given_date, datetime.min.time()))
-
+            print(loan_date, start_of_week)
             # Only count if the loan date is within the current week
             if loan_date >= start_of_week:  # Current week
                 loans_by_day[loan_date.weekday()] += 1  # 0 = Monday, 6 = Sunday
@@ -304,13 +305,45 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 "Friday": loans_by_day[4],
                 "Saturday": loans_by_day[5],
                 "Sunday": loans_by_day[6],
-            }
+            },
+            'loans_pack' : user_packs.count(),
+            'shop_pack' : shop_pack.count()
+
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-from .models import ContainerRequest
+    @action(detail=False, methods=['get'])
+    def loans_and_packs_by_container_type(self, request):
+        shop_id = request.user_id  # Assuming this represents the shop ID
+        all_container_types = Container.objects.values_list('type', flat=True).distinct()
+        print(all_container_types)
+        # Count loans (UserPacks) by container type for the specific shop
+        loans_by_container_type = {container_type: 0 for container_type in all_container_types}
+        shop_packs_by_container_type = {container_type: 0 for container_type in all_container_types}
+        user_packs = UserPacks.objects.filter(shop_id=shop_id).prefetch_related('containers')
+        for user_pack in user_packs:
+            for container in user_pack.containers.all():
+                container_type = container.type
+                loans_by_container_type[container_type] = loans_by_container_type.get(container_type, 0) + 1
+
+        # Count shop containers by container type for the specific shop
+        shop_containers = Container.objects.filter(shop_id=shop_id)
+        for container in shop_containers:
+            container_type = container.type
+            shop_packs_by_container_type[container_type] = shop_packs_by_container_type.get(container_type, 0) + 1
+
+        # Prepare response data with only counts
+        response_data = {
+            "loans_by_container_type": loans_by_container_type,
+            "shop_packs_by_container_type": shop_packs_by_container_type,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+
 
 from rest_framework.decorators import action
 from rest_framework import status, viewsets
