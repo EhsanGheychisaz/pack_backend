@@ -62,9 +62,9 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     @action(detail=False, methods=['post'])
     def request_container(self, request):
         container_requests = request.data.get('containers', [])
-        shop_id = request.data.get('shop_id')
-        requested_by = request.user.id
-
+        shop_id = request.user_id
+        requested_by = request.user_id
+        print(shop_id)
         if not container_requests:
             return Response({'error': 'No container requests provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
