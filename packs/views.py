@@ -1,20 +1,13 @@
-from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from shop.models import Shop
+from django.db.models import Count
 from .models import UserPackInfo, UserPacks , Container
 from .serializers import UserPackInfoSerializer, UserPacksSerializer , ContainerSerializer, ContainerRequestSerializer,ContainerApprovalSerializer
 from account.permissions import CustomIsAuthenticated
-from account.views import validate
 from account.models import User
 from datetime import datetime, timedelta
 from collections import defaultdict
 from django.utils import timezone
-from rest_framework import viewsets, mixins
-from rest_framework.response import Response
-from rest_framework.decorators import action
 
 
 class UserPackInfoView(APIView):
@@ -278,7 +271,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
     @action(detail=False, methods=['get'])
     def loans_by_weekday(self, request):
-        today = timezone.now()  # Keep it as datetime
+        today = timezone.now()
         start_of_week = today - timezone.timedelta(days=today.weekday())
         _id = request.user_id
         # Get all UserPacks with related containers
@@ -286,7 +279,10 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         shop_pack = Container.objects.filter(shop_id=_id)
         # Create a dictionary to hold counts for each day of the week
         loans_by_day = defaultdict(int)
-        print(loans_by_day)
+        users = UserPacks.objects.prefetch_related('containers')\
+    .filter(containers__shop_id=_id)\
+    .aggregate(unique_count=Count('user_pack_id', distinct=True))['unique_count']
+        numerical_code = Container.CONTAINER_TYPE_NUMERICAL_CODES
         for user_pack in user_packs:
             # Ensure that given_date is a datetime object
             loan_date = timezone.make_aware(datetime.combine(user_pack.given_date, datetime.min.time()))
@@ -307,7 +303,9 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 "Sunday": loans_by_day[6],
             },
             'loans_pack' : user_packs.count(),
-            'shop_pack' : shop_pack.count()
+            'shop_pack' : shop_pack.count(),
+            'users' : users,
+            'type': len(numerical_code)
 
         }
 
