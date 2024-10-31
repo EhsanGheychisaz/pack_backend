@@ -125,6 +125,35 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 return Response({'status': 'Container request denied', 'reason': reason}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def return_container(self, request):
+        container_codes = request.data.get("containers", [])
+        shop_id = request.user_id
+        try:
+            shop = Shop.objects.get(id=shop_id)
+        except Shop.DoesNotExist:
+            return Response(
+                {"error": "Shop not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        print(container_codes)
+        for code in container_codes:
+            # Retrieve containers by their code (should return one container per code)
+            container = Container.objects.filter(code=code).first()
+
+            if container:
+                # Find all UserPacks that contain this container
+                user_packs = UserPacks.objects.filter(containers=container)
+
+                for user_pack in user_packs:
+                    # Remove the container from each user pack
+                    user_pack.containers.remove(container)
+
+        return Response(
+            {"message": "Containers returned to shop successfully"},
+            status=status.HTTP_200_OK
+        )
     def create(self, request, *args, **kwargs):
         # Extracting the data from the request
         country = request.data.get('country')
