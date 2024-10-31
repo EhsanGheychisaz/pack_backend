@@ -311,6 +311,24 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'])
+    def info_admin(self, request):
+        today = timezone.now()
+        start_of_week = today - timezone.timedelta(days=today.weekday())
+        _id = request.user_id
+        # Get all UserPacks with related containers
+        user_packs = UserPacks.objects.prefetch_related('containers').filter(containers__shop__isnull=False).all()
+        shop_pack = Container.objects.filter(shop__isnull=False).all()
+        # Create a dictionary to hold counts for each day of the week
+        # Format the response
+        response_data = {
+            'loans_pack': user_packs.count(),
+            'container_pack': shop_pack.count(),
+            'shops': Shop.objects.filter(status='Active').count(),
+
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def loans_and_packs_by_container_type(self, request):
