@@ -135,7 +135,7 @@ class LoginView(APIView):
             except SMSComfirmCode.DoesNotExist:
                 return Response({"error": "Confirmation code not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            token = TokenModel.objects.create(model_name='user' , model_id=user.id)
+            token = TokenModel.objects.create(model_name='user', model_id=user.id)
             refresh = RefreshToken.for_user(token)
             return Response({
                 'access': str(refresh.access_token),
