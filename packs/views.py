@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from django.db.models import Count
 from .models import UserPackInfo, UserPacks , Container
-from .serializers import UserPackInfoSerializer, UserPacksSerializer , ContainerSerializer, ContainerRequestSerializer,ContainerApprovalSerializer
+from .serializers import UserPackInfoSerializer, UserPacksSerializer , ContainerSerializer, ContainerRequestSerializer,ContainerApprovalSerializer , NewUserPacksSerializer
 from account.permissions import CustomIsAuthenticated
 from account.models import User
 from datetime import datetime, timedelta
@@ -399,11 +399,65 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         try:
             # Fetch the last three shops (ordering by the 'id' field)
             last = UserPacks.objects.order_by('-id')[:10]
-            serializer = UserPacksSerializer(last, many=True)
+            serializer = NewUserPacksSerializer(last, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @action(detail=False, methods=['get'], url_path='returns')
+    def returns(self, request):
+        try:
+            # Fetch all UserPacks, ordered by the 'id' field
+            user_packs = UserPacks.objects.order_by('-id')
+
+            final_data = []
+            for user_pack in user_packs:
+                # Get all containers associated with the UserPack
+                containers = user_pack.containers.all()
+
+                # Check if any container is a loan
+                has_loans = any(container.is_loan for container in containers)
+                if not has_loans:
+                    # If there are loans, serialize the UserPack and append to final_data
+                    serialized_data = NewUserPacksSerializer(user_pack).data
+                    final_data.append(serialized_data)
+
+            # If no loans found, you may want to return an empty list or a specific message
+            if not final_data:
+                return Response({"detail": "No loans found."}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response(final_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='loans')
+    def loans(self, request):
+        try:
+            # Fetch all UserPacks, ordered by the 'id' field
+            user_packs = UserPacks.objects.order_by('-id')
+
+            final_data = []
+            for user_pack in user_packs:
+                # Get all containers associated with the UserPack
+                containers = user_pack.containers.all()
+
+                # Check if any container is a loan
+                has_loans = any(container.is_loan for container in containers)
+                print(has_loans)
+                if has_loans:
+                    # If there are loans, serialize the UserPack and append to final_data
+                    serialized_data = NewUserPacksSerializer(user_pack).data
+                    final_data.append(serialized_data)
+
+            # If no loans found, you may want to return an empty list or a specific message
+            if not final_data:
+                return Response({"detail": "No loans found."}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response(final_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

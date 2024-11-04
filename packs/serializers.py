@@ -17,16 +17,34 @@ class UserPacksSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserPacks
-        fields = ['id', 'shop', 'given_date', 'due_date','containers']
-
+        fields = ['id', 'shop', 'given_date', 'due_date', 'containers', 'user_info']
 
 class UserPackInfoSerializer(serializers.ModelSerializer):
     user_packs = UserPacksSerializer(many=True, read_only=True)
     user_name = serializers.CharField(source='user.username', read_only=True)
+    user_phone = serializers.CharField(source='user.phone', read_only=True)
 
     class Meta:
         model = UserPackInfo
-        fields = [ 'user_packs', 'user_name']
+        fields = ['user_packs', 'user_name', 'user_phone']
+
+
+class NewUserPacksSerializer(serializers.ModelSerializer):
+    shop = ShopSerializer(read_only=True)
+    user_info = UserPackInfoSerializer(source='user_pack_id', read_only=True)  # This should correctly reference user_pack_id
+    containers = serializers.SerializerMethodField()  # Use custom method to filter containers
+
+    class Meta:
+        model = UserPacks
+        fields = ['id', 'shop', 'given_date', 'due_date', 'containers', 'user_info']
+
+    def get_containers(self, obj):
+        # Fetch related containers where is_loan is False
+        return ContainerSerializer(obj.containers.filter(is_loan=False), many=True).data
+
+    def get_loans(self, obj):
+        # Fetch related containers where is_loan is False
+        return ContainerSerializer(obj.filter(is_loan=True), many=True).data
 
 
 class ContainerSerializer(serializers.ModelSerializer):
