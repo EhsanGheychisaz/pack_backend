@@ -235,7 +235,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         # Assuming user_id is derived from user_code, adapt as necessary
         user_id = 1  # This should be replaced with dynamic retrieval logic
         user = get_object_or_404(User, pk=user_id)
-        print(user)
         # Get or create UserPackInfo instance
         user_pack_info, created = UserPackInfo.objects.get_or_create(user_id=user.id, defaults={'count': 0})
 
@@ -243,8 +242,12 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         for code in containers_data:
             try:
                 # Get the container instance based on the code
-                container = get_object_or_404(Container, code=code)
-                containers_to_add.append(container)
+                container = get_object_or_404(Container, code=code )
+                container = container.objects.filter(is_loan=False).all()
+                if container:
+                    containers_to_add.append(container)
+                else :
+                    Response("container is loaned" , status=status.HTTP_400_BAD_REQUEST)
             except Container.DoesNotExist:
                 return Response({"error": f"Container with code {code} does not exist."},
                                 status=status.HTTP_404_NOT_FOUND)
@@ -270,17 +273,21 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         user_pack_info.count += 1
         user_pack_info.save()  # Save the updated UserPackInfo
 
-        return Response({"message": "User packs added successfully" , "user_pack" : UserPacksSerializer(user_packs , many=True).data , "user_info"  : UserPackInfoSerializer(user_pack_info , many=True).data}, status=status.HTTP_201_CREATED)
+        return Response({"message": "User packs added successfully" , "user_pack_id" : UserPacksSerializer(UserPacks.objects.filter(pk = user_packs.id) , many=True).data}, status=status.HTTP_201_CREATED)
     @action(detail=True, methods=['put'])
     def update_containers(self, request, pk=None):
-        user_pack = self.get_object()
+        print(pk)
+        user_pack = UserPacks.objects.filter(pk=pk).get()
+        print(user_pack)
         now = datetime.now()
+        if user_pack.given_date.tzinfo is None:
+            given_date = timezone.make_aware(user_pack.given_date, timezone.get_current_timezone())
 
-        if now - user_pack.created_at > timedelta(minutes=2):
-            return Response({"error": "You can only update containers within 2 minutes of creation."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            if given_date > timedelta(minutes=2):
+                return Response({"error": "You can only update containers within 2 minutes of creation."},
+                                status=status.HTTP_400_BAD_REQUEST)
 
-        new_codes = request.data.get('codes', [])
+        new_codes = request.data.get('containers', [])
         containers_to_update = []
 
         for code in new_codes:
@@ -294,8 +301,9 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         user_pack.containers.set(containers_to_update)
         user_pack.containers_num = len(containers_to_update)
         user_pack.save()
+        data = UserPacksSerializer(UserPacks.objects.filter(pk=user_pack.id) , many=True).data
 
-        return Response({"message": "Containers updated successfully"}, status=status.HTTP_200_OK)
+        return Response({"message": "Containers updated successfully"  ,  "user_pack": data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def loans_by_weekday(self, request):

@@ -26,6 +26,7 @@ class Container(models.Model):
     country = models.CharField(max_length=3, choices=COUNTRY_TYPE_CHOICES , null=True)
     date = models.DateField(auto_now=True)
     shop = models.ForeignKey(Shop,null=True, on_delete=models.PROTECT)
+    is_loan = models.BooleanField(default=False)
 
 
 from django.db import models
