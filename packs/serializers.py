@@ -55,9 +55,27 @@ class ContainerRequestSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         container_request = ContainerRequest.objects.create(**validated_data)
         for item_data in items_data:
+            print(item_data)
             ContainerItemRequest.objects.create(container_request=container_request, **item_data)
         return container_request
 
+    def to_representation(self, instance):
+        # Call the superclass's to_representation method to get the default representation
+        representation = super().to_representation(instance)
+
+        # Customize the items representation
+        items_representation = []
+        for item in instance.items.all():
+            items_representation.append({
+                'container_type': item.container_type,
+                'quantity': item.count,
+                # You can add more fields here if needed
+            })
+
+        # Set the customized items representation back to the representation
+        representation['items'] = items_representation
+
+        return representation
 class ContainerApprovalSerializer(serializers.Serializer):
     approved = serializers.BooleanField()
     reason = serializers.CharField(required=False)
