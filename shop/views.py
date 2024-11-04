@@ -40,6 +40,12 @@ class ShopViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'], url_path='info')
+    def info(self, request, *args, **kwargs):
+        instance = Shop.objects.filter(pk= request.user_id)
+        serializer = ShopSerializer(instance,  many=True).data
+        return Response(serializer, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'], url_path='last-two')
     def last_two_shops(self, request):
         try:
