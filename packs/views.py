@@ -235,9 +235,9 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         # Assuming user_id is derived from user_code, adapt as necessary
         user_id = 1  # This should be replaced with dynamic retrieval logic
         user = get_object_or_404(User, pk=user_id)
-
+        print(user)
         # Get or create UserPackInfo instance
-        user_pack_info, created = UserPackInfo.objects.get_or_create(user=user, defaults={'count': 0})
+        user_pack_info, created = UserPackInfo.objects.get_or_create(user_id=user.id, defaults={'count': 0})
 
         containers_to_add = []
         for code in containers_data:
