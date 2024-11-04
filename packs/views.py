@@ -360,7 +360,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         response_data = {
             'loans_pack': user_packs.count(),
             'container_pack': shop_pack.count(),
-            'shops': Shop.objects.filter(status='Active').count(),
+            'shops': Shop.objects.filter(status='active').count(),
 
         }
 
