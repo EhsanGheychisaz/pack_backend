@@ -33,10 +33,15 @@ class ShopViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
-        return  super().update(self, request, *args, **kwargs)
+        instance = self.get_object()  # Get the instance to update
+        serializer = self.get_serializer(instance, data=request.data, partial=True)  # Enable partial updates
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['get'], url_path='last-tow')
-    def last_tow_shops(self, request):
+    @action(detail=False, methods=['get'], url_path='last-two')
+    def last_two_shops(self, request):
         try:
             # Fetch the last three shops (ordering by the 'id' field)
             last_three_shops = Shop.objects.order_by('-id')[:2]
