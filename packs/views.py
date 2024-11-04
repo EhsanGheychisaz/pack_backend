@@ -270,7 +270,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         user_pack_info.count += 1
         user_pack_info.save()  # Save the updated UserPackInfo
 
-        return Response({"message": "User packs added successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "User packs added successfully" , "user_pack" : UserPacksSerializer(user_packs , many=True).data , "user_info"  : UserPackInfoSerializer(user_pack_info , many=True).data}, status=status.HTTP_201_CREATED)
     @action(detail=True, methods=['put'])
     def update_containers(self, request, pk=None):
         user_pack = self.get_object()
