@@ -54,78 +54,78 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
     @action(detail=False, methods=['post'])
     def request_container(self, request):
-        container_requests = request.data.get('containers', [])
         shop_id = request.user_id
         requested_by = request.user_id
-        print(shop_id)
+        container_requests = request.data.get('containers', [])
+
         if not container_requests:
             return Response({'error': 'No container requests provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        for container_request in container_requests:
-            container_type = container_request.get('container_type')
-            count = container_request.get('count', 1)
+        # Construct the main ContainerRequest object
+        request_data = {
+            'shop': shop_id,
+            'requested_by': requested_by,
+            'items': container_requests
+        }
 
-            if ContainerRequest.objects.filter(
-                    shop_id=shop_id,
-                    container_type=container_type,
-                    status='PENDING'
-            ).exists():
-                return Response({'error': f'A pending request already exists for container type {container_type}.'},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-            request_data = {
-                'container_type': container_type,
-                'shop': shop_id,
-                'requested_by': requested_by,
-                'count': count,
-            }
-            serializer = ContainerRequestSerializer(data=request_data)
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({'status': 'Requests for containers successfully created'}, status=status.HTTP_201_CREATED)
+        serializer = ContainerRequestSerializer(data=request_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'status': 'Requests for containers successfully created'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
     @action(detail=True, methods=['post'])
     def approve_or_deny(self, request, pk=None):
+        # Fetch the ContainerRequest object
         container_request = get_object_or_404(ContainerRequest, pk=pk)
         serializer = ContainerApprovalSerializer(data=request.data)
 
-        if serializer.is_valid():
-            approved = serializer.validated_data.get('approved')
-            reason = serializer.validated_data.get('reason', '')
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            if approved:
-                # Fetch available containers of the type requested
-                available_containers = Container.objects.filter(
-                    type=container_request.container_type, shop__isnull=True
-                )[:container_request.count]
+        approved = serializer.validated_data.get('approved')
+        reason = serializer.validated_data.get('reason', '')
 
-                if available_containers.count() < container_request.count:
-                    return Response(
-                        {'error': f'Not enough available containers for type {container_request.container_type}'},
-                        status=status.HTTP_400_BAD_REQUEST)
+        if approved:
+            # Retrieve available containers matching the request type and count
+            available_containers = Container.objects.filter(
+                type=container_request.container_type,
+                shop__isnull=True
+            )[:container_request.count]
 
-                # Assign containers to the shop
-                for container in available_containers:
-                    container.shop = container_request.shop
-                    container.save()
+            if available_containers.count() < container_request.count:
+                return Response(
+                    {
+                        'error': f'Not enough available containers for type {container_request.container_type}'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-                container_request.status = 'APPROVED'
-                container_request.approval_date = timezone.now()
-                container_request.save()
+            # Assign the available containers to the requesting shop
+            for container in available_containers:
+                container.shop = container_request.shop
+                container.save()
 
-                return Response({'status': 'Container request approved and containers assigned'}, status=status.HTTP_200_OK)
-            else:
-                container_request.status = 'DENIED'
-                container_request.denial_reason = reason
-                container_request.save()
-                return Response({'status': 'Container request denied', 'reason': reason}, status=status.HTTP_200_OK)
+            container_request.status = 'APPROVED'
+            container_request.approval_date = timezone.now()
+            container_request.save()
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'status': 'Container request approved and containers assigned'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            # Deny the request and save the reason
+            container_request.status = 'DENIED'
+            container_request.denial_reason = reason
+            container_request.save()
 
+            return Response(
+                {'status': 'Container request denied', 'reason': reason},
+                status=status.HTTP_200_OK
+            )
     @action(detail=False, methods=['post'])
     def return_container(self, request):
         container_codes = request.data.get("containers", [])
@@ -139,7 +139,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             )
         print(container_codes)
         for code in container_codes:
-            # Retrieve containers by their code (should return one container per code)
             container = Container.objects.filter(code=code).first()
 
             if container:
@@ -386,6 +385,16 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='last-containers')
+    def last_containers(self, request):
+        try:
+            # Fetch the last three shops (ordering by the 'id' field)
+            last = UserPacks.objects.order_by('-id')[:10]
+            serializer = UserPacksSerializer(last, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

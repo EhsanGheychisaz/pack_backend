@@ -32,6 +32,18 @@ class ShopViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
+    def update(self, request, *args, **kwargs):
+        return  super().update(self, request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path='last-tow')
+    def last_tow_shops(self, request):
+        try:
+            # Fetch the last three shops (ordering by the 'id' field)
+            last_three_shops = Shop.objects.order_by('-id')[:2]
+            serializer = self.get_serializer(last_three_shops, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken

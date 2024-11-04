@@ -36,6 +36,9 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+from django.db import models
+from django.contrib.auth.models import User
+
 class ContainerRequest(models.Model):
     REQUEST_STATUS_CHOICES = [
         ('PENDING', 'Pending'),
@@ -43,17 +46,23 @@ class ContainerRequest(models.Model):
         ('DENIED', 'Denied'),
     ]
 
-    container_type = models.CharField(max_length=4, choices=Container.CONTAINER_TYPE_CHOICES, null=True)
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
     requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=REQUEST_STATUS_CHOICES, default='PENDING')
-    count = models.PositiveIntegerField(default=1)
     approval_date = models.DateTimeField(null=True, blank=True)
     denial_reason = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"Request for {self.container_type} by {self.shop.name} (Status: {self.status})"
+        return f"Request by {self.shop.name} (Status: {self.status})"
+
+class ContainerItemRequest(models.Model):
+    container_request = models.ForeignKey(ContainerRequest, related_name='items', on_delete=models.CASCADE)
+    container_type = models.CharField(max_length=4, choices=Container.CONTAINER_TYPE_CHOICES, null=True)
+    count = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.count} of {self.container_type}"
 
 
 class UserPackInfo(models.Model):

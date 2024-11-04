@@ -36,20 +36,27 @@ class ContainerSerializer(serializers.ModelSerializer):
         model = Container
         fields = ['type', 'code', 'guarantee_amount', 'country', 'date', 'shop']
 
+from rest_framework import serializers
+from .models import ContainerRequest, ContainerItemRequest
+
+class ContainerItemRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContainerItemRequest
+        fields = ['container_type', 'count']
 
 class ContainerRequestSerializer(serializers.ModelSerializer):
-    container = ContainerSerializer(read_only=True)
+    items = ContainerItemRequestSerializer(many=True)
 
     class Meta:
         model = ContainerRequest
-        fields = ['id','container', 'shop', 'count', 'requested_by', 'request_date','container_type', 'status', 'approval_date', 'denial_reason']
+        fields = ['id', 'shop', 'requested_by', 'request_date', 'status', 'approval_date', 'denial_reason', 'items']
 
-    # Creating a new container request
     def create(self, validated_data):
-        print(validated_data)
-        request = ContainerRequest.objects.create(**validated_data)
-        return request
-
+        items_data = validated_data.pop('items')
+        container_request = ContainerRequest.objects.create(**validated_data)
+        for item_data in items_data:
+            ContainerItemRequest.objects.create(container_request=container_request, **item_data)
+        return container_request
 
 class ContainerApprovalSerializer(serializers.Serializer):
     approved = serializers.BooleanField()

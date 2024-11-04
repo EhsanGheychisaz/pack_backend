@@ -42,8 +42,7 @@ from django.contrib import admin
 from .models import ContainerRequest
 
 class ContainerRequestAdmin(admin.ModelAdmin):
-    list_display = ('container_type', 'shop', 'requested_by', 'status', 'count', 'request_date', 'approval_date')
-    list_filter = ('status', 'container_type', 'shop')
-    search_fields = ('shop__name', 'requested_by__username', 'container_type')
+    list_display = ['id', 'shop', 'requested_by', 'request_date', 'status']
+    list_filter = ['status', 'shop']
 
 admin.site.register(ContainerRequest, ContainerRequestAdmin)
