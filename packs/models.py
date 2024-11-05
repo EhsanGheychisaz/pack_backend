@@ -45,7 +45,7 @@ class ContainerRequest(models.Model):
     ]
 
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
-    requested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    requested_by = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=REQUEST_STATUS_CHOICES, default='PENDING')
     approval_date = models.DateTimeField(null=True, blank=True)

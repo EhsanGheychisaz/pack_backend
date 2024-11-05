@@ -58,7 +58,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         requested_by_id = request.user_id  # Ensure you're using the correct field name
 
         # Validate that the `requested_by_id` corresponds to an existing User
-        requested_by = get_object_or_404(User, pk=requested_by_id)
+        requested_by = get_object_or_404(Shop, pk=requested_by_id)
 
         container_requests = request.data.get('containers', [])
         if not container_requests:
