@@ -225,24 +225,22 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     @action(detail=False, methods=['post'])
     def add_packs(self, request):
         containers_data = request.data.get('containers')
-        user_code = request.data.get('user')
-
+        shop = request.user_id
         # Validate the user code (uncomment and implement the validate function)
         # status = validate({'totp_code': user_code})
         # if not status:
         #     return Response({"error": "Invalid user code"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Assuming user_id is derived from user_code, adapt as necessary
-        user_id = 1  # This should be replaced with dynamic retrieval logic
+        user_id = request.data.get('user')
         user = get_object_or_404(User, pk=user_id)
         # Get or create UserPackInfo instance
         user_pack_info, created = UserPackInfo.objects.get_or_create(user_id=user.id, defaults={'count': 0})
-
         containers_to_add = []
         for code in containers_data:
             try:
                 # Get the container instance based on the code
-                container = Container.objects.filter(code=code, is_loan=False).get()
+                container = Container.objects.filter(code=code).get()
                 container.is_loan = True
                 container.save()
                 if container:
@@ -262,19 +260,16 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             shop=containers_to_add[0].shop  # Directly use the shop instance
         )
 
-        # Save the UserPacks instance to generate an ID
         user_packs.save()
 
-        # Assign the containers to the UserPacks instance
         user_packs.containers.set(containers_to_add)  # Use container instances here
         user_packs.containers_num = len(containers_to_add)  # Update container count
         user_packs.save()  # Save the updated UserPacks instance
 
-        # Update the UserPackInfo count
         user_pack_info.count += 1
-        user_pack_info.save()  # Save the updated UserPackInfo
+        user_pack_info.save()
 
-        return Response({"message": "User packs added successfully" , "user_pack_id" : UserPacksSerializer(UserPacks.objects.filter(pk = user_packs.id) , many=True).data}, status=status.HTTP_201_CREATED)
+        return Response({"message": "User packs added successfully" , "user_pack_id" : NewUserPacksSerializer(UserPacks.objects.filter(pk = user_packs.id) , many=True).data}, status=status.HTTP_201_CREATED)
     @action(detail=True, methods=['put'])
     def update_containers(self, request, pk=None):
         print(pk)
