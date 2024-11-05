@@ -67,7 +67,7 @@ class ContainerRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContainerRequest
-        fields = ['id', 'shop', 'requested_by', 'request_date', 'status', 'approval_date', 'denial_reason', 'items']
+        fields = ['id', 'shop', 'request_date', 'status', 'approval_date', 'denial_reason', 'items']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

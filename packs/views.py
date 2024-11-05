@@ -55,10 +55,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     @action(detail=False, methods=['post'])
     def request_container(self, request):
         shop_id = request.user_id
-        requested_by_id = request.user_id  # Ensure you're using the correct field name
 
-        # Validate that the `requested_by_id` corresponds to an existing User
-        requested_by = get_object_or_404(Shop, pk=requested_by_id)
 
         container_requests = request.data.get('containers', [])
         if not container_requests:
@@ -66,8 +63,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
         # Construct the main ContainerRequest object
         request_data = {
-            'shop': shop_id,
-            'requested_by': requested_by.id,  # Use the valid ID from the retrieved User object
+            'shop': shop_id,  # Use the valid ID from the retrieved User object
             'items': container_requests
         }
 
@@ -481,4 +477,4 @@ class ContainerRequestViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ContainerRequestSerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ['status', 'shop']
-    search_fields = ['shop__name', 'requested_by__username']
+    search_fields = ['shop__name']

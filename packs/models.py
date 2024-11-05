@@ -29,13 +29,7 @@ class Container(models.Model):
     is_loan = models.BooleanField(default=False)
 
 
-from django.db import models
 
-
-from django.db import models
-
-
-from django.db import models
 
 class ContainerRequest(models.Model):
     REQUEST_STATUS_CHOICES = [
@@ -45,7 +39,6 @@ class ContainerRequest(models.Model):
     ]
 
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
-    requested_by = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
     request_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=REQUEST_STATUS_CHOICES, default='PENDING')
     approval_date = models.DateTimeField(null=True, blank=True)
