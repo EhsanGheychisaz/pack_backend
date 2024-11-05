@@ -42,7 +42,7 @@ from django.contrib import admin
 from .models import ContainerRequest
 
 class ContainerRequestAdmin(admin.ModelAdmin):
-    list_display = ['id', 'shop', 'requested_by', 'request_date', 'status']
+    list_display = ['id', 'shop', 'request_date', 'status']
     list_filter = ['status', 'shop']
 
 admin.site.register(ContainerRequest, ContainerRequestAdmin)
