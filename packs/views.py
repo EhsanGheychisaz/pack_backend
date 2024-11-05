@@ -242,7 +242,9 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         for code in containers_data:
             try:
                 # Get the container instance based on the code
-                container = Container.objects.filter(code=code, is_loan=False)
+                container = Container.objects.filter(code=code, is_loan=False).get()
+                container.is_loan = True
+                container.save()
                 if container:
                     containers_to_add.append(container)
                 else :
