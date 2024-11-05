@@ -55,16 +55,19 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     @action(detail=False, methods=['post'])
     def request_container(self, request):
         shop_id = request.user_id
-        requested_by = request.user_id
-        container_requests = request.data.get('containers', [])
+        requested_by_id = request.user_id  # Ensure you're using the correct field name
 
+        # Validate that the `requested_by_id` corresponds to an existing User
+        requested_by = get_object_or_404(User, pk=requested_by_id)
+
+        container_requests = request.data.get('containers', [])
         if not container_requests:
             return Response({'error': 'No container requests provided.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Construct the main ContainerRequest object
         request_data = {
             'shop': shop_id,
-            'requested_by': requested_by,
+            'requested_by': requested_by.id,  # Use the valid ID from the retrieved User object
             'items': container_requests
         }
 
@@ -74,7 +77,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             return Response({'status': 'Requests for containers successfully created'}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
     @action(detail=True, methods=['post'])
     def approve_or_deny(self, request, pk=None):
