@@ -224,29 +224,28 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
     @action(detail=False, methods=['post'])
     def add_packs(self, request):
-        containers_data = request.data.get('containers')
-        shop = request.user_id
-        # Validate the user code (uncomment and implement the validate function)
-        # status = validate({'totp_code': user_code})
-        # if not status:
-        #     return Response({"error": "Invalid user code"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Assuming user_id is derived from user_code, adapt as necessary
+
+        containers_data = request.data.get('containers')
         user_id = request.data.get('user')
         user = get_object_or_404(User, pk=user_id)
-        # Get or create UserPackInfo instance
-        user_pack_info, created = UserPackInfo.objects.get_or_create(user_id=user.id, defaults={'count': 0})
+        user_pack_info_exists = UserPackInfo.objects.filter(user_id=user.id).exists()
+        if not user_pack_info_exists:
+            # Initialize the serializer with the correct user reference
+            UserPackInfo.objects.create(user_id=user_id, count=0)
+
+        # Retrieve the UserPackInfo instance
+        user_pack_info = UserPackInfo.objects.get(user_id=user.id)
+
+        # Process the containers
         containers_to_add = []
         for code in containers_data:
             try:
                 # Get the container instance based on the code
-                container = Container.objects.filter(code=code).get()
+                container = Container.objects.filter(code=code, is_loan=False).get()
                 container.is_loan = True
                 container.save()
-                if container:
-                    containers_to_add.append(container)
-                else :
-                    Response("container is loaned" , status=status.HTTP_400_BAD_REQUEST)
+                containers_to_add.append(container)
             except Container.DoesNotExist:
                 return Response({"error": f"Container with code {code} does not exist."},
                                 status=status.HTTP_404_NOT_FOUND)
@@ -259,17 +258,25 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             due_date=(datetime.now() + timedelta(weeks=1)).date(),
             shop=containers_to_add[0].shop  # Directly use the shop instance
         )
-
         user_packs.save()
 
-        user_packs.containers.set(containers_to_add)  # Use container instances here
-        user_packs.containers_num = len(containers_to_add)  # Update container count
-        user_packs.save()  # Save the updated UserPacks instance
+        # Set containers and update container count
+        user_packs.containers.set(containers_to_add)
+        user_packs.containers_num = len(containers_to_add)
+        user_packs.save()
 
+        # Update the count in UserPackInfo
         user_pack_info.count += 1
         user_pack_info.save()
 
-        return Response({"message": "User packs added successfully" , "user_pack_id" : NewUserPacksSerializer(UserPacks.objects.filter(pk = user_packs.id) , many=True).data}, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "message": "User packs added successfully",
+                "user_pack_id": NewUserPacksSerializer(UserPacks.objects.filter(pk=user_packs.id), many=True).data
+            },
+            status=status.HTTP_201_CREATED
+        )
+
     @action(detail=True, methods=['put'])
     def update_containers(self, request, pk=None):
         print(pk)

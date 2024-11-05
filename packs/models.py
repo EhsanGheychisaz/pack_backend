@@ -30,15 +30,12 @@ class Container(models.Model):
 
 
 from django.db import models
-from django.contrib.auth.models import User  # Assuming User represents the admin or requester
 
 
 from django.db import models
-from django.contrib.auth.models import User
 
 
 from django.db import models
-from django.contrib.auth.models import User
 
 class ContainerRequest(models.Model):
     REQUEST_STATUS_CHOICES = [
@@ -67,8 +64,8 @@ class ContainerItemRequest(models.Model):
 
 
 class UserPackInfo(models.Model):
-    user = models.OneToOneField(User,on_delete=models.CASCADE)
-    count = models.PositiveIntegerField()
+    user = models.OneToOneField(User,on_delete=models.CASCADE , related_name='pack_info')
+    count = models.PositiveIntegerField(default=0)
 
 
 class UserPacks(models.Model):
