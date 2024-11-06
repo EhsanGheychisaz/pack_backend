@@ -84,12 +84,12 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         approved = serializer.validated_data.get('approved')
+        print(approved)
         reason = serializer.validated_data.get('reason', '')
 
-        if container_request.status == 'APPROVED':
+        if approved:
             # Iterate through each item request associated with the container request
             for item_request in container_request.items.all():
-                # Retrieve available containers matching the type and count
                 available_containers = Container.objects.filter(
                     type=item_request.container_type,
                     shop__isnull=True
