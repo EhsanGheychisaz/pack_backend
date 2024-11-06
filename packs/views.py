@@ -86,25 +86,27 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         approved = serializer.validated_data.get('approved')
         reason = serializer.validated_data.get('reason', '')
 
-        if approved:
-            # Retrieve available containers matching the request type and count
-            available_containers = Container.objects.filter(
-                type=container_request.container_type,
-                shop__isnull=True
-            )[:container_request.count]
+        if container_request.status == 'APPROVED':
+            # Iterate through each item request associated with the container request
+            for item_request in container_request.items.all():
+                # Retrieve available containers matching the type and count
+                available_containers = Container.objects.filter(
+                    type=item_request.container_type,
+                    shop__isnull=True
+                )[:item_request.count]
 
-            if available_containers.count() < container_request.count:
-                return Response(
-                    {
-                        'error': f'Not enough available containers for type {container_request.container_type}'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                if available_containers.count() < item_request.count:
+                    return Response(
+                        {
+                            'error': f'Not enough available containers for type {item_request.container_type}'
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
 
-            # Assign the available containers to the requesting shop
-            for container in available_containers:
-                container.shop = container_request.shop
-                container.save()
+                # Assign the available containers to the requesting shop
+                for container in available_containers:
+                    container.shop = container_request.shop
+                    container.save()
 
             container_request.status = 'APPROVED'
             container_request.approval_date = timezone.now()
