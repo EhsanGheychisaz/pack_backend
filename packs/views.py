@@ -256,7 +256,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             pack_description="Pack containing specified containers",
             given_date=datetime.now().date(),
             due_date=(datetime.now() + timedelta(weeks=1)).date(),
-            shop=containers_to_add[0].shop  # Directly use the shop instance
+            shop= Shop.objects.filter(pk=request.user_id).get() # Directly use the shop instance
         )
         user_packs.save()
 
@@ -300,7 +300,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             except Container.DoesNotExist:
                 return Response({"error": f"Container with code {code} does not exist."},
                                 status=status.HTTP_404_NOT_FOUND)
-        user_pack.shop = request.user_id
         user_pack.containers.set(containers_to_update)
         user_pack.containers_num = len(containers_to_update)
         user_pack.save()
