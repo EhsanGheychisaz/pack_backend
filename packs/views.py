@@ -304,7 +304,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         user_pack.containers.set(containers_to_update)
         user_pack.containers_num = len(containers_to_update)
         user_pack.save()
-        data = UserPacksSerializer(UserPacks.objects.filter(pk=user_pack.id) , many=True).data
+        data = NewUserPacksSerializer(UserPacks.objects.filter(pk=user_pack.id) , many=True).data
 
         return Response({"message": "Containers updated successfully"  ,  "user_pack": data}, status=status.HTTP_200_OK)
 
