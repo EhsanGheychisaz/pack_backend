@@ -29,24 +29,6 @@ class UserPackInfoSerializer(serializers.ModelSerializer):
         fields = ['user_packs', 'user_name', 'user_phone']
 
 
-class NewUserPacksSerializer(serializers.ModelSerializer):
-    shop = ShopSerializer(read_only=True)
-    user_info = UserPackInfoSerializer(source='user_pack_id', read_only=True)  # This should correctly reference user_pack_id
-    containers = serializers.SerializerMethodField()  # Use custom method to filter containers
-
-    class Meta:
-        model = UserPacks
-        fields = ['id', 'shop', 'given_date', 'due_date', 'containers', 'user_info']
-
-    def get_containers(self, obj):
-        # Fetch related containers where is_loan is False
-        return ContainerSerializer(obj.containers.filter(is_loan=False), many=True).data
-
-    def get_loans(self, obj):
-        # Fetch related containers where is_loan is False
-        return ContainerSerializer(obj.filter(is_loan=True), many=True).data
-
-
 class ContainerSerializer(serializers.ModelSerializer):
     code  = serializers.CharField(required=False)
     guarantee_amount = serializers.IntegerField(required=False)
@@ -97,3 +79,22 @@ class ContainerRequestSerializer(serializers.ModelSerializer):
 class ContainerApprovalSerializer(serializers.Serializer):
     approved = serializers.BooleanField()
     reason = serializers.CharField(required=False)
+
+
+
+class NewUserPacksSerializer(serializers.ModelSerializer):
+    shop = ShopSerializer()
+    user_info = UserPackInfoSerializer(source='user_pack_id', read_only=True)  # This should correctly reference user_pack_id
+    containers = ContainerSerializer(many=True)
+    class Meta:
+        model = UserPacks
+        fields = ['id', 'shop', 'given_date', 'due_date', 'containers', 'user_info']
+
+    def get_containers(self, obj):
+        # Fetch related containers where is_loan is False
+        return ContainerSerializer(obj.containers.filter(is_loan=False), many=True).data
+
+    def get_loans(self, obj):
+        # Fetch related containers where is_loan is False
+        return ContainerSerializer(obj.filter(is_loan=True), many=True).data
+
