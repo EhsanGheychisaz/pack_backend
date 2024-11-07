@@ -9,7 +9,6 @@ from .permissions import CustomIsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import AccessToken
 from .serializers import UserSerializer
 
@@ -60,6 +59,7 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 import pyotp
 from .models import User, SecretKeyUser
+from .sms import generateTotpُCode
 
 def validate(data):
     print(data)
@@ -95,7 +95,6 @@ def validate(data):
 class TOTPVerificationView(APIView):
     def post(self, request, *args, **kwargs):
         flag = validate(data=request.data)
-        print(flag)
         if flag:
             return Response({'message': 'TOTP code is valid'}, status=status.HTTP_200_OK)
         return Response({'message': 'TOTP code is not valid'}, status=status.HTTP_403_FORBIDDEN)
@@ -121,7 +120,6 @@ class LoginView(APIView):
             except User.DoesNotExist:
                 return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-            # Verify the OTP code
             try:
                 confirm_code = SMSComfirmCode.objects.filter(user=user).latest('generated_at')
                 if confirm_code.code != code:
@@ -148,8 +146,19 @@ from rest_framework.views import APIView
 from .sms import generateConfirmCode
 
 
-class SendOTPView(APIView):
+class SendTOTPSMS(APIView):
+    def post(self, request):
+        phone = request.data.get('phone')
+        if not phone:
+            return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        if generateTotpُCode(phone):
+            return Response({"message": "TOTP sent successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Failed to send TOTP"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class SendOTPView(APIView):
     def post(self, request):
         phone = request.data.get('phone')
         if not phone:
