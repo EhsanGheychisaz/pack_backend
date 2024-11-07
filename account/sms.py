@@ -48,7 +48,7 @@ def generateTotpُCode(phone):
 
     # Verify the TOTP code with a valid window of 1
     code =  totp.now()
-
+    code = code + f"{user.id}"
     data = {
         "bodyId": 171434,
         "to": user.phone,
