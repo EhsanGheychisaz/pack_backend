@@ -28,7 +28,7 @@ class SecretKeyUser(models.Model):
 
 
 class SMSComfirmCode(models.Model):
-    code = models.CharField(max_length=6)
+    code = models.CharField(max_length=12)
     generated_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
 
