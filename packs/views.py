@@ -11,12 +11,12 @@ from django.utils import timezone
 
 
 class UserPackInfoView(APIView):
-    permission_classes = [CustomIsAuthenticated]
-    def get(self, request, user_id):
-        if user_id != request.user_id:
+    def get(self, request):
+        user_id = request.user_id
+        if not user_id:
             return  Response(status=403)
         # Fetch the UserPackInfo for the user
-        user_pack_info = get_object_or_404(UserPackInfo, user_id=user_id)
+        user_pack_info = UserPackInfo.objects.filter(user_id=user_id).get()
 
         # Fetch the associated UserPacks
         user_packs = UserPacks.objects.filter(user_pack_id=user_pack_info)
@@ -242,7 +242,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         for code in containers_data:
             try:
                 # Get the container instance based on the code
-                container = Container.objects.filter(code=code, is_loan=False).get()
+                container = Container.objects.filter(code=code, is_loan=False).last().get()
                 container.is_loan = True
                 container.save()
                 containers_to_add.append(container)
