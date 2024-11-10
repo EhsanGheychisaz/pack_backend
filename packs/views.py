@@ -242,7 +242,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         for code in containers_data:
             try:
                 print(code)
-                container = Container.objects.filter(code=code, is_loan=False)
+                container = Container.objects.filter(code__exact=code, is_loan=False).get()
                 print(Container.objects.filter(code__exact=code).get())
                 container.is_loan = True
                 container.save()
