@@ -211,7 +211,7 @@ class UserManagementView(APIView):
             return Response({"error": "Shop not found or inactive"}, status=status.HTTP_404_NOT_FOUND)
 
         # Hash the new password and update the shop
-        shop.password = make_password(new_password)
+        shop.password = new_password
         shop.save()
 
         # Send email notification
