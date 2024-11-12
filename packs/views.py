@@ -17,8 +17,8 @@ from django.shortcuts import get_object_or_404
 
 class UserPackInfoView(APIView):
     permission_classes = [CustomIsAuthenticated]
+
     def get(self, request, *args, **kwargs):
-        print(request)
         user_id = request.user_id
         if not user_id:
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -247,10 +247,10 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         if not user_pack_info_exists:
             # Initialize the serializer with the correct user reference
             UserPackInfo.objects.create(user_id=user_id, count=0)
-
         # Retrieve the UserPackInfo instance
         user_pack_info = UserPackInfo.objects.get(user_id=user.id)
-
+        if user_pack_info.count > 4:
+            return Response({"message": "out of limit for this user"}, status=status.HTTP_403_FORBIDDEN)
         # Process the containers
         containers_to_add = []
         for code in containers_data:

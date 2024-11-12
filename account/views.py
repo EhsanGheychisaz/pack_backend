@@ -54,7 +54,6 @@ class UserInfoViewSet(viewsets.ViewSet):
 
 
 def validate(data):
-    print(data)
     totp_code = data.get('totp_code')
 
     # Ensure totp_code is long enough to contain code and user_id
@@ -119,8 +118,8 @@ class LoginView(APIView):
             except SMSComfirmCode.DoesNotExist:
                 return Response({"error": "Confirmation code not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            token = TokenModel.objects.create(model_name='user', model_id=user.id)
-            refresh = RefreshToken.for_user(token)
+            # token = TokenModel.objects.create(model_name='user', model_id=user.id)
+            refresh = RefreshToken.for_user(user)
             return Response({
                 'access': str(refresh.access_token),
             }, status=status.HTTP_200_OK)
@@ -166,10 +165,9 @@ class UpdateUserView(APIView):
 
     def put(self, request):
         user_id = request.user_id
-        user_id = TokenModel.objects.get(pk=user_id)
         try:
             # Fetch the user by their ID
-            user = User.objects.get(id=user_id.model_id, is_deleted=False)
+            user = User.objects.get(id=user_id, is_deleted=False)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
