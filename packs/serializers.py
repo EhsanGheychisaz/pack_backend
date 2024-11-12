@@ -60,9 +60,8 @@ class ContainerRequestSerializer(serializers.ModelSerializer):
         return container_request
 
     def to_representation(self, instance):
-        # Call the superclass's to_representation method to get the default representation
         representation = super().to_representation(instance)
-
+        representation['shop'] = ShopSerializer(Shop.objects.get(pk=representation['shop'])).data
         # Customize the items representation
         items_representation = []
         for item in instance.items.all():
