@@ -9,7 +9,7 @@ from .models import Shop
 class ShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shop
-        fields = ['id', 'name', 'email', 'phone', 'password', 'status', 'logo', 'x_gis', 'y_gis']
+        fields = ['id', 'name', 'email','created_date', 'phone', 'password', 'status', 'logo', 'x_gis', 'y_gis']
         extra_kwargs = {
             'password': {'write_only': True, 'required': False},
             'logo': {'required': False},
