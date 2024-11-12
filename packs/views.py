@@ -101,7 +101,8 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             for item_request in container_request.items.all():
                 available_containers = Container.objects.filter(
                     type=item_request.container_type,
-                    shop__isnull=True
+                    shop__isnull=True ,
+                    is_loan=False
                 )[:item_request.count]
 
                 if available_containers.count() < item_request.count:

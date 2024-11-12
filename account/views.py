@@ -1,24 +1,21 @@
-from django.shortcuts import render
-from rest_framework_simplejwt.tokens import AccessToken
-from django.contrib.auth.hashers import check_password
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from rest_framework import status
-from .models import User
 from .permissions import CustomIsAuthenticated
+from django.utils import timezone
+from rest_framework_simplejwt.tokens import RefreshToken
+from .models import SMSComfirmCode,TokenModel
+from .serializers import LoginSerializer
+from django.shortcuts import get_object_or_404
+import pyotp
+from .models import SecretKeyUser
+from .sms import generateTotpُCode
+from .sms import generateConfirmCode
+from rest_framework.views import APIView
+from .serializers import UpdateUserSerializer
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import AccessToken
+from .models import User,UserAdmin
 from .serializers import UserSerializer
 
 
-
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-import pyotp
-from .models import User, SecretKeyUser
-from .serializers import UserSerializer, SecretKeyUserSerializer
 
 class UserInfoViewSet(viewsets.ViewSet):
     permission_classes = [CustomIsAuthenticated]
@@ -55,11 +52,6 @@ class UserInfoViewSet(viewsets.ViewSet):
         return Response(user_info, status=status.HTTP_200_OK)
 
 
-from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
-import pyotp
-from .models import User, SecretKeyUser
-from .sms import generateTotpُCode
 
 def validate(data):
     print(data)
@@ -99,13 +91,7 @@ class TOTPVerificationView(APIView):
             return Response({'message': 'TOTP code is valid'}, status=status.HTTP_200_OK)
         return Response({'message': 'TOTP code is not valid'}, status=status.HTTP_403_FORBIDDEN)
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils import timezone
-from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User, SMSComfirmCode,TokenModel
-from .serializers import LoginSerializer
+
 
 class LoginView(APIView):
     def post(self, request):
@@ -142,9 +128,6 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-from rest_framework.views import APIView
-from .sms import generateConfirmCode
-
 
 class SendTOTPSMS(APIView):
     def post(self, request):
@@ -176,9 +159,6 @@ class SendOTPView(APIView):
         else:
             return Response({"error": "Failed to send OTP"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-from rest_framework.views import APIView
-from .serializers import UpdateUserSerializer
 
 
 class UpdateUserView(APIView):
@@ -217,10 +197,6 @@ class UpdateUserView(APIView):
         return round(completeness_percentage, 2)  # Round to two decimal places
 
 
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from .models import User,UserAdmin
-from .serializers import UserSerializer  # Ensure you have a UserSerializer
 
 
 class UserListViewSet(APIView):

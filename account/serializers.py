@@ -64,7 +64,6 @@ class UpdateUserSerializer(serializers.ModelSerializer):
             extra_kwargs = {
                 'password': {'write_only': True}  # Password is write-only for security
             }
-
         # Ensure the password is hashed before saving
         def create(self, validated_data):
             if 'password' in validated_data:
