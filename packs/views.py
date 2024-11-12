@@ -10,34 +10,44 @@ from collections import defaultdict
 from django.utils import timezone
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+
 class UserPackInfoView(APIView):
-    def get(self, request):
+    permission_classes = [CustomIsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        print(request)
         user_id = request.user_id
         if not user_id:
-            return  Response(status=403)
-        # Fetch the UserPackInfo for the user
-        user_pack_info = UserPackInfo.objects.filter(user_id=user_id).get()
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        # Fetch the UserPackInfo for the user or return 404 if not found
+        user_pack_info = get_object_or_404(UserPackInfo, user_id=user_id)
 
         # Fetch the associated UserPacks
-        user_packs = UserPacks.objects.filter(user_pack_id=user_pack_info)
+        user_packs = UserPacks.objects.filter(user_pack_id=user_pack_info.id)
 
         # Calculate the remind value
         count = user_pack_info.count
+        print(count)
         remind = 5 - count
 
         # Serialize the data
         user_pack_info_serializer = UserPackInfoSerializer(user_pack_info)
-        user_packs_serializer = UserPacksSerializer(user_packs, many=True)
+        user_packs_serializer = NewUserPacksSerializer(user_packs, many=True)
 
         # Prepare the response data
         response_data = {
             'user_pack_info': user_pack_info_serializer.data,
             'user_packs': user_packs_serializer.data,
             'remind': remind,
-            "total":remind +user_pack_info.count
+            "total": remind + count
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+
 
 
 from rest_framework import viewsets, mixins
@@ -84,7 +94,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         approved = serializer.validated_data.get('approved')
-        print(approved)
         reason = serializer.validated_data.get('reason', '')
 
         if approved:
@@ -137,7 +146,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 {"error": "Shop not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        print(container_codes)
+
         for code in container_codes:
             container = Container.objects.filter(code=code).first()
 
@@ -147,8 +156,12 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
                 for user_pack in user_packs:
                     # Remove the container from each user pack
-                    user_pack.containers.remove(container)
-
+                    container.is_loan = False
+                    container.save()
+                    user_pack.due_date = None
+                    user_pack.save()
+                    user_pack.user_pack_id.count -= 1
+                    user_pack.user_pack_id.save()
         return Response(
             {"message": "Containers returned to shop successfully"},
             status=status.HTTP_200_OK
@@ -241,8 +254,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         containers_to_add = []
         for code in containers_data:
             try:
-                print(code)
-                container = Container.objects.filter(code__exact=code, is_loan=False).get()
+                container = Container.objects.filter(code__exact=code, is_loan=False , shop_id=request.user_id).get()
                 print(Container.objects.filter(code__exact=code).get())
                 container.is_loan = True
                 container.save()
@@ -280,9 +292,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
     @action(detail=True, methods=['put'])
     def update_containers(self, request, pk=None):
-        print(pk)
         user_pack = UserPacks.objects.filter(pk=pk).get()
-        print(user_pack)
         now = datetime.now()
         if user_pack.given_date.tzinfo is None:
             given_date = timezone.make_aware(user_pack.given_date, timezone.get_current_timezone())
@@ -293,10 +303,16 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
         new_codes = request.data.get('containers', [])
         containers_to_update = []
-
+        for i in user_pack.containers.all():
+            i.is_loan = False
+            i.save()
+            user_pack.containers.remove(i)
+        user_pack.save()
         for code in new_codes:
             try:
                 container = Container.objects.get(code=code)
+                container.is_loan = True
+                container.save()
                 containers_to_update.append(container)
             except Container.DoesNotExist:
                 return Response({"error": f"Container with code {code} does not exist."},
@@ -401,7 +417,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     def last_containers(self, request):
         try:
             # Fetch the last three shops (ordering by the 'id' field)
-            last = UserPacks.objects.order_by('-id')[:10]
+            last = UserPacks.objects.filter(shop_id=request.user_id).order_by('-id')[:10]
             serializer = NewUserPacksSerializer(last, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:

@@ -65,7 +65,7 @@ class UserPacks(models.Model):
     user_pack_id = models.ForeignKey(UserPackInfo , on_delete=models.PROTECT)
     pack_description = models.TextField()
     given_date = models.DateTimeField()
-    due_date = models.DateTimeField()
+    due_date = models.DateTimeField(null=True)
     containers_num = models.PositiveIntegerField(default=0)
     containers = models.ManyToManyField(Container)
     shop = models.ForeignKey(Shop , on_delete=models.PROTECT , null=True)
