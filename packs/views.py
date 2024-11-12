@@ -136,6 +136,11 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 {'status': 'Container request denied', 'reason': reason},
                 status=status.HTTP_200_OK
             )
+
+    from rest_framework.decorators import action
+    from rest_framework.response import Response
+    from rest_framework import status
+
     @action(detail=False, methods=['post'])
     def return_container(self, request):
         container_codes = request.data.get("containers", [])
@@ -148,25 +153,39 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        processed_user_packs = set()  # To track processed UserPacks
+
         for code in container_codes:
-            container = Container.objects.filter(code=code).first()
+            container = Container.objects.filter(code=code, is_loan=True).first()
 
             if container:
                 # Find all UserPacks that contain this container
                 user_packs = UserPacks.objects.filter(containers=container)
 
                 for user_pack in user_packs:
-                    # Remove the container from each user pack
                     container.is_loan = False
                     container.save()
+                    if user_pack.id in processed_user_packs:
+                        continue
+                    # Process the user_pack
                     user_pack.due_date = None
                     user_pack.save()
-                    user_pack.user_pack_id.count -= 1
-                    user_pack.user_pack_id.save()
+
+                    # Decrement count only if it’s greater than 0
+                    if user_pack.user_pack_id.count > 0:
+                        user_pack.user_pack_id.count -= 1
+                        user_pack.user_pack_id.save()
+                    else:
+                        print(f"Cannot decrement count further for user_pack_id {user_pack.user_pack_id}")
+
+                    # Mark this user_pack as processed
+                    processed_user_packs.add(user_pack.id)
+
         return Response(
             {"message": "Containers returned to shop successfully"},
             status=status.HTTP_200_OK
         )
+
     def create(self, request, *args, **kwargs):
         # Extracting the data from the request
         country = request.data.get('country')
@@ -238,8 +257,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
     @action(detail=False, methods=['post'])
     def add_packs(self, request):
-
-
         containers_data = request.data.get('containers')
         user_id = request.data.get('user')
         user = get_object_or_404(User, pk=user_id)
@@ -254,7 +271,9 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         # Process the containers
         containers_to_add = []
         for code in containers_data:
+            print(code)
             try:
+                print(Container.objects.filter(code__exact=code).get())
                 container = Container.objects.filter(code__exact=code, is_loan=False , shop_id=request.user_id).get()
                 print(Container.objects.filter(code__exact=code).get())
                 container.is_loan = True
@@ -443,7 +462,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
             # If no loans found, you may want to return an empty list or a specific message
             if not final_data:
-                return Response({"detail": "No loans found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response([], status=status.HTTP_200_OK)
 
             return Response(final_data, status=status.HTTP_200_OK)
 
@@ -470,7 +489,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
             # If no loans found, you may want to return an empty list or a specific message
             if not final_data:
-                return Response({"detail": "No loans found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response([], status=status.HTTP_200_OK)
 
             return Response(final_data, status=status.HTTP_200_OK)
 
