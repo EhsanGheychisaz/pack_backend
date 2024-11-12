@@ -390,11 +390,10 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     def loans_and_packs_by_container_type(self, request):
         shop_id = request.user_id  # Assuming this represents the shop ID
         all_container_types = Container.objects.values_list('type', flat=True).distinct()
-        print(all_container_types)
         # Count loans (UserPacks) by container type for the specific shop
         loans_by_container_type = {container_type: 0 for container_type in all_container_types}
         shop_packs_by_container_type = {container_type: 0 for container_type in all_container_types}
-        user_packs = UserPacks.objects.filter(shop_id=shop_id).prefetch_related('containers')
+        user_packs = UserPacks.objects.filter(shop_id=shop_id , due_date=None).all()
         for user_pack in user_packs:
             for container in user_pack.containers.all():
                 container_type = container.type
@@ -427,17 +426,17 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     @action(detail=False, methods=['get'], url_path='returns')
     def returns(self, request):
         try:
+            user_id = request.user_id
             # Fetch all UserPacks, ordered by the 'id' field
-            user_packs = UserPacks.objects.order_by('-id')
+            user_packs = UserPacks.objects.filter(shop_id=user_id).order_by('-id')
 
             final_data = []
             for user_pack in user_packs:
                 # Get all containers associated with the UserPack
                 containers = user_pack.containers.all()
-
                 # Check if any container is a loan
                 has_loans = any(container.is_loan for container in containers)
-                if not has_loans:
+                if not has_loans and user_pack.due_date == None:
                     # If there are loans, serialize the UserPack and append to final_data
                     serialized_data = NewUserPacksSerializer(user_pack).data
                     final_data.append(serialized_data)
@@ -454,9 +453,8 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     @action(detail=False, methods=['get'], url_path='loans')
     def loans(self, request):
         try:
-            # Fetch all UserPacks, ordered by the 'id' field
-            user_packs = UserPacks.objects.order_by('-id')
-
+            user_id = request.user_id
+            user_packs = UserPacks.objects.filter(shop_id=user_id).order_by('-id')
             final_data = []
             for user_pack in user_packs:
                 # Get all containers associated with the UserPack
