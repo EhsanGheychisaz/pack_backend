@@ -217,7 +217,7 @@ class UserManagementView(APIView):
         # Send email notification
         send_mail(
             subject="Your Password Has Been Changed",
-            message="Your password has been successfully changed.",
+            message=f"Your password has been successfully changed.  and  it your password {shop.password}",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[shop.email],
         )
