@@ -1,3 +1,5 @@
+import os
+
 from django.shortcuts import render
 
 from rest_framework import viewsets, status
@@ -9,6 +11,7 @@ from account.models import User , UserAdmin
 from .serializers import ShopSerializer
 from account.permissions import CustomIsAuthenticated
 import random
+from django.conf import settings
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 from django.conf import settings
@@ -197,7 +200,6 @@ class UserManagementView(APIView):
         elif 'change-shop-status' in request.path:
             return self.change_shop_status(request)
         return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-
     def change_password(self, request):
         shop_id = request.data.get("shop")
         new_password = request.data.get("new_password")
@@ -214,15 +216,25 @@ class UserManagementView(APIView):
         shop.password = new_password
         shop.save()
 
-        # Send email notification
+        # Load HTML template
+        html_file_path = os.path.join(f"{settings.BASE_DIR}/templates/","ECOPACK-RESET-PASSWORD.html")
+        print(html_file_path)
+        try:
+            with open(html_file_path, "r", encoding="utf-8") as html_file:
+                html_content = html_file.read().replace("{{ shop_name }}", shop.name).replace("{{ new_password }}",shop.password)
+        except FileNotFoundError:
+            return Response({"error": "Email template not found"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         send_mail(
             subject="Your Password Has Been Changed",
-            message=f"Your password has been successfully changed.  and  it your password {shop.password}",
+            message=f"Hello, your password has been updated {shop.password}.",  # Fallback plain-text message
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[shop.email],
+            html_message=html_content,
         )
 
-        return Response({"message": "Password changed successfully and email notification sent."}, status=status.HTTP_200_OK)
+        return Response({"message": "Password changed successfully and email notification sent."},
+                        status=status.HTTP_200_OK)
 
     def change_shop_status(self, request):
 
