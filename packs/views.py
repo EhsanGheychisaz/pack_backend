@@ -27,7 +27,7 @@ class UserPackInfoView(APIView):
         user_pack_info = get_object_or_404(UserPackInfo, user_id=user_id)
 
         # Fetch the associated UserPacks
-        user_packs = UserPacks.objects.filter(user_pack_id=user_pack_info.id)
+        user_packs = UserPacks.objects.filter(user_pack_id=user_pack_info.id , due_date__isnull=False)
 
         # Calculate the remind value
         count = user_pack_info.count
