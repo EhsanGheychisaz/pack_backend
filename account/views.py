@@ -6,7 +6,7 @@ from .serializers import LoginSerializer
 from django.shortcuts import get_object_or_404
 import pyotp
 from .models import SecretKeyUser
-from .sms import generateTotpُCode
+from .sms import generateTotpCode
 from .sms import generateConfirmCode
 from rest_framework.views import APIView
 from .serializers import UpdateUserSerializer
