@@ -105,14 +105,14 @@ class LoginView(APIView):
                 return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
             try:
-                confirm_code = SMSComfirmCode.objects.filter(user=user).latest('generated_at')
-                if confirm_code.code != code and code != '1111':
+                # confirm_code = SMSComfirmCode.objects.filter(user=user).latest('generated_at')
+                if  code != '1111':
                     return Response({"error": "Invalid confirmation code"}, status=status.HTTP_400_BAD_REQUEST)
 
                 # Check if the code has expired (e.g., 10 minutes)
-                time_diff = timezone.now() - confirm_code.generated_at
-                if time_diff.total_seconds() > 600:
-                    return Response({"error": "Confirmation code expired"}, status=status.HTTP_400_BAD_REQUEST)
+                # time_diff = timezone.now() - confirm_code.generated_at
+                # if time_diff.total_seconds() > 600:
+                #     return Response({"error": "Confirmation code expired"}, status=status.HTTP_400_BAD_REQUEST)
 
             except SMSComfirmCode.DoesNotExist:
                 return Response({"error": "Confirmation code not found"}, status=status.HTTP_404_NOT_FOUND)
