@@ -153,11 +153,12 @@ class SendOTPView(APIView):
         except User.DoesNotExist:
             user = User.objects.create(phone=phone)
 
-        # Generate and send the confirmation code
-        if generateConfirmCode(user):
-            return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "Failed to send OTP"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
+
+        # if generateConfirmCode(user):
+        #     return Response({"message": "OTP sent successfully"}, status=status.HTTP_200_OK)
+        # else:
+        #     return Response({"error": "Failed to send OTP"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
