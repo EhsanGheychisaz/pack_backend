@@ -1,7 +1,6 @@
 from django.db import models
 
 from django.core.exceptions import ValidationError
-from django.db import models
 from django.utils.deconstruct import deconstructible
 
 
@@ -16,13 +15,11 @@ class FileValidator:
         if file.size > self.max_size:
             raise ValidationError(f"File size should not exceed {self.max_size / (1024 * 1024)} MB.")
 
-        # Check file type
-        if file.content_type not in self.allowed_types:
+        # Check file type (content_type might not always be available)
+        content_type = getattr(file, 'content_type', None)
+        if content_type and content_type not in self.allowed_types:
             raise ValidationError(f"File type must be one of the following: {', '.join(self.allowed_types)}.")
 
-
-# Apply validator to the logo field
-from django.db import models
 
 class Shop(models.Model):
     STATUS_CHOICES = [
