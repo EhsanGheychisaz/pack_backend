@@ -423,7 +423,10 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         for container in shop_containers:
             container_type = container.type
             shop_packs_by_container_type[container_type] = shop_packs_by_container_type.get(container_type, 0) + 1
-
+        if len(loans_by_container_type):
+            loans_by_container_type = {0}
+        if len(shop_packs_by_container_type):
+            shop_packs_by_container_type = {0}
         # Prepare response data with only counts
         response_data = {
             "loans_by_container_type": loans_by_container_type,
