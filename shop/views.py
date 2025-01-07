@@ -53,7 +53,7 @@ class ShopViewSet(viewsets.ModelViewSet):
     def last_two_shops(self, request):
         try:
             # Fetch the last three shops (ordering by the 'id' field)
-            last_three_shops = Shop.objects.order_by('-id')[:2]
+            last_three_shops = Shop.objects.filter(status="inactive").order_by('-id')[:2]
             serializer = self.get_serializer(last_three_shops, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:
