@@ -37,8 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'rest_framework',
     'rest_framework_simplejwt',
+    'twilio',
     'account',
     'packs',
+    'django_filters',
     'corsheaders',
     'shop',
     'django.contrib.messages',
@@ -62,7 +64,9 @@ ROOT_URLCONF = 'pack_backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates')
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -87,29 +91,33 @@ DATABASE_NAME = os.getenv("DATABASE_NAME")
 DATABASE_USER = os.getenv("DATABASE_USER")
 DATABASE_PASSWORD = os.getenv("DATABASE_PASS")
 # # Database
-# # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
 #
+# DATABASE_HOST = os.getenv("DATABASE_URL")
+# DATABASE_PORT = os.getenv("DATABASE_PORT")
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': f'{DATABASE_NAME}',
+#         'USER': f'{DATABASE_USER}',
+#         'PASSWORD': f'{DATABASE_PASSWORD}',
+#         'HOST': f'{DATABASE_HOST}',
+#         'PORT': '5432',
 #     }
 # }
 #
 
-DATABASE_HOST = os.getenv("DATABASE_URL")
-DATABASE_PORT = os.getenv("DATABASE_PORT")
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': f'{DATABASE_NAME}',
-        'USER': f'{DATABASE_USER}',
-        'PASSWORD': f'{DATABASE_PASSWORD}',
-        'HOST': f'{DATABASE_HOST}',
-        'PORT': '5432',
-    }
-}
-
+CSRF_TRUSTED_ORIGINS = [
+    'http://154.91.170.3:8586/',
+]
 
 
 # Password validation
@@ -143,6 +151,14 @@ USE_I18N = True
 USE_TZ = True
 
 
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'noreply.ecosystempack@gmail.com'
+EMAIL_HOST_PASSWORD = 'pozp kgnu sdds nkvf'
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
@@ -171,3 +187,42 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
+
+#
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'verbose': {
+#             'format': '{levelname} {asctime} {module} {message}',
+#             'style': '{',
+#         },
+#         'simple': {
+#             'format': '{levelname} {message}',
+#             'style': '{',
+#         },
+#     },
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'simple',
+#         },
+#         'file': {
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(BASE_DIR, 'django.log'),
+#             'formatter': 'verbose',
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['console', 'file'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#         'myapp': {  # Replace 'myapp' with your app name
+#             'handlers': ['console', 'file'],
+#             'level': 'DEBUG',
+#             'propagate': False,
+#         },
+#     },
+# }
