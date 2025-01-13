@@ -386,7 +386,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 "Saturday": loans_by_day[5],
                 "Sunday": loans_by_day[6],
             },
-            'loans_pack' : user_packs.get().containers.count(),
+            'loans_pack' : user_packs.aggregate(container_count=Count('containers')),
             'shop_pack' : shop_pack.count(),
             'users' : users,
             'type': len(numerical_code)
