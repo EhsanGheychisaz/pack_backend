@@ -24,9 +24,18 @@ class UserPackInfoView(APIView):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         # Fetch the UserPackInfo for the user or return 404 if not found
-        user_pack_info = get_object_or_404(UserPackInfo, user_id=user_id)
+        if UserPackInfo.objects.filter(user_id=user_id).exists() == False:
+            response_data = {
+                'user_pack_info': [],
+                'user_packs': [],
+                'remind': 5,
+                "total": 5
+            }
 
-        # Fetch the associated UserPacks
+            return Response(response_data, status=status.HTTP_200_OK)
+        user_pack_info =UserPackInfo.objects.filter(user_id=user_id).get()
+
+            # Fetch the associated UserPacks
         user_packs = UserPacks.objects.filter(user_pack_id=user_pack_info.id , due_date__isnull=False)
 
         # Calculate the remind value
@@ -347,16 +356,15 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
     @action(detail=False, methods=['get'])
     def loans_by_weekday(self, request):
         today = timezone.now()
-        start_of_week = today - timezone.timedelta(days=today.weekday())
+        start_of_week = today - timezone.timedelta(days=7)
         _id = request.user_id
-        # Get all UserPacks with related containers
-        user_packs = UserPacks.objects.prefetch_related('containers').filter(containers__shop_id=_id)
+        user_packs = UserPacks.objects.filter(shop_id=_id)
+        print(user_packs)
         shop_pack = Container.objects.filter(shop_id=_id)
         # Create a dictionary to hold counts for each day of the week
         loans_by_day = defaultdict(int)
-        users = UserPacks.objects.prefetch_related('containers')\
-    .filter(containers__shop_id=_id)\
-    .aggregate(unique_count=Count('user_pack_id', distinct=True))['unique_count']
+        users = UserPacks.objects.filter(shop_id=_id).count()
+        print(users)
         numerical_code = Container.CONTAINER_TYPE_NUMERICAL_CODES
         for user_pack in user_packs:
             # Ensure that given_date is a datetime object
@@ -364,6 +372,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             print(loan_date, start_of_week)
             # Only count if the loan date is within the current week
             if loan_date >= start_of_week:  # Current week
+                print(loan_date.weekday())
                 loans_by_day[loan_date.weekday()] += 1  # 0 = Monday, 6 = Sunday
 
         # Format the response
@@ -377,7 +386,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 "Saturday": loans_by_day[5],
                 "Sunday": loans_by_day[6],
             },
-            'loans_pack' : user_packs.count(),
+            'loans_pack' : user_packs.get().containers.count(),
             'shop_pack' : shop_pack.count(),
             'users' : users,
             'type': len(numerical_code)
