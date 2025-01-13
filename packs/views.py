@@ -374,7 +374,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             if loan_date >= start_of_week:  # Current week
                 print(loan_date.weekday())
                 loans_by_day[loan_date.weekday()] += 1  # 0 = Monday, 6 = Sunday
-
+        loans_pack = user_packs.aggregate(Count('containers'))
         # Format the response
         response_data = {
             "loans_by_weekday": {
@@ -386,7 +386,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 "Saturday": loans_by_day[5],
                 "Sunday": loans_by_day[6],
             },
-            'loans_pack' : user_packs.aggregate(container_count=Count('containers')),
+            'loans_pack' : loans_pack['containers__count'],
             'shop_pack' : shop_pack.count(),
             'users' : users,
             'type': len(numerical_code)
