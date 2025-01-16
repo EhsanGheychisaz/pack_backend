@@ -51,6 +51,7 @@ class UserPackInfoView(APIView):
             for j in i['containers']:
                 if j['is_loan']:
                     new_data.append(j)
+            i['containers'] = new_data
         # Prepare the response data
         response_data = {
             'user_pack_info': user_pack_info_serializer.data,
