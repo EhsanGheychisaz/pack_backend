@@ -191,11 +191,11 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                     processed_user_packs.add(user_pack.id)
                     print(user_pack.containers.count())
                     if user_pack.containers.filter(is_loan=True).count() == 0:
-                        if user_pack.user_pack_id.count > 0:
-                            user_pack.user_pack_id.count -= 1
-                            user_pack.user_pack_id.save()
                         user_pack.due_date = None
                         user_pack.save()
+                    if user_pack.user_pack_id.count > 0 and user_pack.containers.filter(is_loan=True).count() == 0:
+                        user_pack.user_pack_id.count -= 1
+                        user_pack.user_pack_id.save()
 
         return Response(
             {"message": "Containers returned to shop successfully"},
