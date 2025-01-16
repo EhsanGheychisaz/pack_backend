@@ -363,7 +363,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         shop_pack = Container.objects.filter(shop_id=_id)
         # Create a dictionary to hold counts for each day of the week
         loans_by_day = defaultdict(int)
-        users = UserPacks.objects.filter(shop_id=_id).values(user_packs).distinct().count()
+        users = UserPacks.objects.filter(shop_id=_id).values('user_pack_id__user_id').distinct().count()
         print(users)
         numerical_code = Container.CONTAINER_TYPE_NUMERICAL_CODES
         for user_pack in user_packs:
@@ -373,8 +373,9 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             # Only count if the loan date is within the current week
             if loan_date >= start_of_week:  # Current week
                 print(loan_date.weekday())
-                loans_by_day[loan_date.weekday()] += 1  # 0 = Monday, 6 = Sunday
-        loans_pack = user_packs.filter(due_date__isnull=True).aggregate(Count('containers'))
+                loans_by_day[loan_date.weekday()] += user_pack.containers.count()  # 0 = Monday, 6 = Sunday
+        loans_pack = user_packs.filter(due_date__isnull=False).aggregate(Count('containers'))
+        print(loans_pack)
         # Format the response
         response_data = {
             "loans_by_weekday": {
@@ -401,12 +402,12 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         start_of_week = today - timezone.timedelta(days=today.weekday())
         _id = request.user_id
         # Get all UserPacks with related containers
-        user_packs = UserPacks.objects.prefetch_related('containers').filter(containers__shop__isnull=False).all()
+        user_packs = UserPacks.objects.filter(due_date__isnull=False).aggregate(Count('containers'))
         shop_pack = Container.objects.filter(shop__isnull=False).all()
         # Create a dictionary to hold counts for each day of the week
         # Format the response
         response_data = {
-            'loans_pack': user_packs.count(),
+            'loans_pack': user_packs['containers__count'],
             'container_pack': shop_pack.count(),
             'shops': Shop.objects.filter(status='active').count(),
 
