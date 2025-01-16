@@ -430,7 +430,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         # Count loans (UserPacks) by container type for the specific shop
         loans_by_container_type = {container_type: 0 for container_type in all_container_types}
         shop_packs_by_container_type = {container_type: 0 for container_type in all_container_types}
-        user_packs = UserPacks.objects.filter(shop_id=shop_id , due_date=None).all()
+        user_packs = UserPacks.objects.filter(shop_id=shop_id ,due_date__isnull=False).all()
         print(shop_packs_by_container_type , user_packs , loans_by_container_type , all_container_types)
         for user_pack in user_packs:
             for container in user_pack.containers.all():
