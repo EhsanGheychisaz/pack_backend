@@ -177,8 +177,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                     if user_pack.id in processed_user_packs:
                         continue
                     # Process the user_pack
-                    user_pack.due_date = None
-                    user_pack.save()
 
                     # Decrement count only if it’s greater than 0
                     if user_pack.user_pack_id.count > 0:
@@ -189,6 +187,10 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
 
                     # Mark this user_pack as processed
                     processed_user_packs.add(user_pack.id)
+                    print(user_pack.containers.count())
+                    if user_pack.containers.filter(is_loan=True).count() == 0:
+                        user_pack.due_date = None
+                        user_pack.save()
 
         return Response(
             {"message": "Containers returned to shop successfully"},
