@@ -46,9 +46,11 @@ class UserPackInfoView(APIView):
         # Serialize the data
         user_pack_info_serializer = UserPackInfoSerializer(user_pack_info)
         user_packs_serializer = NewUserPacksSerializer(user_packs, many=True)
-        user_packs_serializer.data['containers'] = [i for i in user_packs_serializer.data['containers'] if
-                                                    i['is_loan'] == False]
-
+        for i in user_packs_serializer.data:
+            new_data = []
+            for j in i['containers']:
+                if j['is_loan']:
+                    new_data.append(j)
         # Prepare the response data
         response_data = {
             'user_pack_info': user_pack_info_serializer.data,

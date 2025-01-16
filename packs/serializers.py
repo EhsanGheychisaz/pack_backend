@@ -35,7 +35,7 @@ class ContainerSerializer(serializers.ModelSerializer):
     guarantee_amount = serializers.IntegerField(required=False)
     class Meta:
         model = Container
-        fields = ['type', 'code', 'guarantee_amount', 'country', 'date', 'shop']
+        fields = ['type', 'code', 'guarantee_amount' , 'is_loan', 'country', 'date', 'shop']
 
 from rest_framework import serializers
 from .models import ContainerRequest, ContainerItemRequest
