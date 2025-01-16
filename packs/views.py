@@ -168,21 +168,21 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
             )
 
         processed_user_packs = set()  # To track processed UserPacks
-
+        print(container_codes)
         for code in container_codes:
+            print(code)
             container = Container.objects.filter(code=code, is_loan=True).first()
 
             if container:
                 # Find all UserPacks that contain this container
-                user_packs = UserPacks.objects.filter(containers=container)
-
+                user_packs = UserPacks.objects.filter(containers=container , due_date__isnull=False)
+                print(user_packs)
                 for user_pack in user_packs:
                     container.is_loan = False
                     container.save()
                     if user_pack.id in processed_user_packs:
                         continue
                     # Process the user_pack
-
                     # Decrement count only if it’s greater than 0
                     else:
                         print(f"Cannot decrement count further for user_pack_id {user_pack.user_pack_id}")
@@ -194,6 +194,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                         user_pack.due_date = None
                         user_pack.save()
                     if user_pack.user_pack_id.count > 0 and user_pack.containers.filter(is_loan=True).count() == 0:
+                        print('hi', user_pack.containers.all(), user_pack.user_pack_id)
                         user_pack.user_pack_id.count -= 1
                         user_pack.user_pack_id.save()
 
@@ -430,18 +431,18 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         loans_by_container_type = {container_type: 0 for container_type in all_container_types}
         shop_packs_by_container_type = {container_type: 0 for container_type in all_container_types}
         user_packs = UserPacks.objects.filter(shop_id=shop_id , due_date=None).all()
+        print(shop_packs_by_container_type , user_packs , loans_by_container_type , all_container_types)
         for user_pack in user_packs:
             for container in user_pack.containers.all():
                 container_type = container.type
-                loans_by_container_type[container_type] = 0
-                loans_by_container_type[container_type] = loans_by_container_type.get(container_type, 0) + 1
+                print(container_type ,  loans_by_container_type.get(container_type, 0))
+                loans_by_container_type[container_type] +=  1
 
         # Count shop containers by container type for the specific shop
         shop_containers = Container.objects.filter(shop_id=shop_id)
         for container in shop_containers:
             container_type = container.type
-            shop_packs_by_container_type[container_type] = 0
-            shop_packs_by_container_type[container_type] = shop_packs_by_container_type.get(container_type, 0) + 1
+            shop_packs_by_container_type[container_type] += 1
         # Prepare response data with only counts
         response_data = {
             "loans_by_container_type": loans_by_container_type,
