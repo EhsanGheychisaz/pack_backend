@@ -363,7 +363,7 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
         shop_pack = Container.objects.filter(shop_id=_id)
         # Create a dictionary to hold counts for each day of the week
         loans_by_day = defaultdict(int)
-        users = UserPacks.objects.filter(shop_id=_id).count()
+        users = UserPacks.objects.filter(shop_id=_id).values(user_packs).distinct().count()
         print(users)
         numerical_code = Container.CONTAINER_TYPE_NUMERICAL_CODES
         for user_pack in user_packs:
@@ -375,7 +375,6 @@ class ContainerViewSet(viewsets.GenericViewSet, mixins.UpdateModelMixin, mixins.
                 print(loan_date.weekday())
                 loans_by_day[loan_date.weekday()] += 1  # 0 = Monday, 6 = Sunday
         loans_pack = user_packs.filter(due_date__isnull=True).aggregate(Count('containers'))
-        print(loans_pack)
         # Format the response
         response_data = {
             "loans_by_weekday": {
